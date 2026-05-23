@@ -4,10 +4,10 @@
 
 **Goal:** 在 1~2 周内搭出一个能跑的 UE5 原型，验证 spec 描述的核心机制（等距俯视 / 时间推进 / 对话 / 场景跳转 / meshy 资产）在 UE5 + 一人开发的条件下是否可行。
 
-**Architecture:** UE5.6 LTS + C++（核心系统）+ Blueprint（业务逻辑）+ UMG（UI）。本 plan 实现最小可玩切片：1 个主角能在 2 个场景间走动、跟 1 个 NPC 说话、看到时间推进。所有"内容"都是占位符 —— spec 里的真实 NPC / 经济 / 关系 都不在这个 plan 范围。
+**Architecture:** UE5.7.4 + C++（核心系统）+ Blueprint（业务逻辑）+ UMG（UI）。本 plan 实现最小可玩切片：1 个主角能在 2 个场景间走动、跟 1 个 NPC 说话、看到时间推进。所有"内容"都是占位符 —— spec 里的真实 NPC / 经济 / 关系 都不在这个 plan 范围。
 
 **Tech Stack:**
-- UE5.6 LTS（Unreal Engine 5.6，长期支持版本）
+- UE5.7.4（Unreal Engine 5.7.4）
 - C++17（UE5 标准）+ Blueprint
 - UMG（UE5 的 UI 系统）
 - Git + Git LFS（资产存储）
@@ -28,7 +28,7 @@
 
 ## 验证目标清单（完成本 Plan 后逐项打勾）
 
-- [ ] UE5.6 项目能在本机正常构建 + 运行
+- [ ] UE5.7.4 项目能在本机正常构建 + 运行
 - [ ] 编辑器冷启动 < 90 秒（一人开发可忍受）
 - [ ] 等距俯视 45° 镜头在屏幕上看起来跟 Cult of the Lamb / Disco Elysium 一个调
 - [ ] 主角能在场景中用 WASD 走动 + 触发交互
@@ -120,7 +120,7 @@ D:\repos\sg-life-sim\
 
 ## 前置准备（开始 Task 1 前）
 
-1. **安装 UE5.6 LTS** 通过 Epic Games Launcher
+1. **安装 UE5.7.4** 通过 Epic Games Launcher
 2. **安装 Visual Studio 2022 Community**，确保勾选了 "Game development with C++" workload 和 ".NET desktop development"
 3. **安装 Git LFS**：`git lfs install` 在 PowerShell 跑一次
 4. **创建 Mixamo 账号**（mixamo.com，Adobe 账号免费）—— 用于下载主角模型 / 动画
@@ -137,11 +137,11 @@ D:\repos\sg-life-sim\
 - Create: `D:\repos\sg-life-sim\README.md`
 - Create: `D:\repos\sg-life-sim\Source\SGLifeSim\` 等（由 UE5 自动生成）
 
-**目标：** 在 `D:\repos\sg-life-sim` 创建一个 UE5.6 C++ 项目，配置 git-lfs，第一次 commit。
+**目标：** 在 `D:\repos\sg-life-sim` 创建一个 UE5.7.4 C++ 项目，配置 git-lfs，第一次 commit。
 
 - [ ] **Step 1：UE5 Editor 创建项目**
 
-打开 Epic Games Launcher → Library → 启动 UE 5.6 → 在 Project Browser 选 "Games" → "Blank" → 配置如下：
+打开 Epic Games Launcher → Library → 启动 UE 5.7.4 → 在 Project Browser 选 "Games" → "Blank" → 配置如下：
 - **Project Type:** C++
 - **Target Platform:** Desktop
 - **Quality Preset:** Maximum（一人开发可调）
@@ -277,17 +277,17 @@ git lfs track "*.uasset" "*.umap" "*.fbx" "*.png" "*.wav"
 - 当前实施计划：[docs/plans/2026-05-23-engine-validation-prototype.md](docs/plans/2026-05-23-engine-validation-prototype.md)
 
 ## 技术栈
-- UE5.6 LTS
+- UE5.7.4
 - C++17 + Blueprint
 - Git + Git LFS
 
 ## 开发环境
 - Windows 11
 - Visual Studio 2022 Community（含 "Game development with C++" workload）
-- UE5.6 通过 Epic Games Launcher 安装
+- UE5.7.4 通过 Epic Games Launcher 安装
 
 ## 上手
-1. 安装 UE5.6 + VS2022 + Git LFS
+1. 安装 UE5.7.4 + VS2022 + Git LFS
 2. clone 本仓库
 3. 双击 `SGLifeSim.uproject` 打开
 4. 等待第一次编译（5~10 分钟）
@@ -309,7 +309,7 @@ git status
 - 没有 `Intermediate/` 或 `Binaries/` 被加入
 
 ```powershell
-git commit -m "feat: initial UE5.6 C++ project scaffolding via Editor"
+git commit -m "feat: initial UE5.7.4 C++ project scaffolding via Editor"
 git log --oneline -5
 ```
 
@@ -1002,45 +1002,50 @@ git commit -m "feat(level): add L_Apartment prototype scene with player spawn"
 
 ---
 
-## Task 7：meshy.ai 资产导入流程验证
+## Task 7：外部 3D 资产导入流程验证（免费资源路线）
 
 **Files:**
-- Create: `Content/MeshyTest/SM_TestProp.uasset`（导入的网格）
-- Create: `docs/decisions/2026-05-23-meshy-import-workflow.md`（流程文档）
+- Create: `Content/ExternalAssets/SM_TestProp_<name>.uasset`（导入的测试资产）
+- Create: `docs/decisions/2026-05-23-asset-import-workflow.md`（多源工作流）
 
-**目标：** 验证 meshy.ai 出资产到 UE5 的流程是否通畅，文档化以备后续大规模生产。
+**目标：** 验证从免费资产源（Fab / Sketchfab / Kenney）下载 → UE5 导入 → 放进场景的流程，确认对一人开发可持续。
 
-**关键验证：** 风格是否跟场景里其他资产融合 / 导入步骤是否可重复 / 拓扑质量能否接受。
+**关键验证：** 资产风格是否能融合 / 导入步骤是否可重复 / 找资产到上场景的速度。
 
-- [ ] **Step 1：在 meshy.ai 生成一个测试资产**
+**为什么免费资源 vs meshy.ai（决策记录）：**
+2026-05-23 决定 MVP 阶段不用 meshy.ai（要付费 $20/月才能稳定产出，免费版 200 credits 太紧）。改用免费资源管线。spec §11 描述的 meshy 流程**推迟到 Plan 3+**，等真正需要"新加坡独特元素"（ERP gantry / 榴莲 / 组屋阳台等通用 marketplace 找不到的资产）时再启用。届时再评估 meshy 是否值这个钱。
 
-登录 [meshy.ai](https://meshy.ai) → New Project → Text to 3D → Prompt（统一模板，本项目所有 meshy 资产都会用类似 prompt）：
+- [ ] **Step 1：选一个免费资产源 + 下载一个测试道具**
 
-```
-A traditional Singaporean kopitiam coffee cup, white porcelain with green and
-red rim stripes, half full of black coffee, isometric game asset, stylized
-semi-realistic, PBR materials, warm color palette
-```
+下面 3 个源任选一个（推荐 A，跟 UE5 集成最深）。**只做一个**就够验证流程。
 
-设置：
-- Style: **PBR**
-- Topology: **Quad** （拓扑更干净）
-- Polycount: **Low / 5K** （prototype 够）
+**选项 A：Fab Marketplace（UE5 原生，最简单 / 推荐）**
 
-Generate。等 1~3 分钟。
+1. UE5 编辑器菜单栏 → **Fab**（顶栏右上有个 Fab 按钮，没有就 Window → Fab）
+2. 左侧 filter：勾选 **Free** + **Format: UE5** / **Asset Type: 3D Model**
+3. 搜索框输入 `cup` / `table` / `furniture` 等通用词
+4. 找到一个免费 PBR 道具 → 点资产卡片 → **Add to My Library** → **Add to Project**
+5. 资产直接出现在 Content Drawer，**自动跳过下载 + 导入步骤**（这是 Fab 比 Sketchfab 强的地方）
 
-得到结果 → 选满意的 → Download → 选 **FBX** 格式 → 保存到 `D:\repos\sg-life-sim\Content\MeshyTest\meshy_kopitiam_cup.fbx`。
+**选项 B：Sketchfab（量最大，免费 CC0 多）**
 
-如果咖啡杯效果不好，尝试其他 prompt：
-- 一个榴莲："A spiky durian fruit, brown shell with sharp thorns, isometric game asset, stylized..."
-- 一个 Bata 凉鞋
-- 一个 EZ-Link 卡
+1. 访问 [sketchfab.com](https://sketchfab.com) → 顶部 Browse
+2. 左侧 filter：**Downloadable: ON** + **License: CC0** （这个 license 商用零顾虑）
+3. 搜索 `coffee cup` / `chair` / `table` / `food` 等
+4. 注册账号（邮箱，免费）→ 点资产 → Download → 选 **Autoconverted format (.glb)** 或 **Original format**
+5. 保存到 `D:\repos\sg-life-sim\Content\ExternalAssets\` 目录（需手动建）
 
-- [ ] **Step 2：在 UE5 导入 FBX**
+**选项 C：Kenney.nl（最快但卡通风重，CC0）**
 
-Content Drawer → 进入 `Content/MeshyTest/` → 右键 → Import → 选 `meshy_kopitiam_cup.fbx`。
+1. 访问 [kenney.nl/assets](https://kenney.nl/assets) → 上方 filter 选 "3D"
+2. 找一个 Kit（如 "Furniture Kit" / "Food Kit" / "City Kit"）→ Download
+3. 解压 zip 到 `D:\repos\sg-life-sim\Content\ExternalAssets\<KitName>\` —— 一个 kit 通常包含几十个 FBX
 
-导入对话框：
+- [ ] **Step 2：导入 UE5（仅选项 B/C 需要；选项 A 跳过）**
+
+Content Drawer → 进入 `Content/ExternalAssets/` → 右键 → **Import to /Game/ExternalAssets** → 选 FBX 或 glb。
+
+导入对话框（保持默认）：
 - **Static Mesh**: ✅
 - **Skeletal Mesh**: ❌
 - **Import Materials**: ✅
@@ -1048,87 +1053,92 @@ Content Drawer → 进入 `Content/MeshyTest/` → 右键 → Import → 选 `me
 - **Auto Generate Collision**: ✅
 - 其他默认
 
-Import All。生成：
-- `SM_meshy_kopitiam_cup`（Static Mesh）
-- 若干材质 / 贴图
-
-重命名为 `SM_TestProp` 保持简洁。
+Import All。重命名生成的 Static Mesh 为 `SM_TestProp_<具体名>`（如 `SM_TestProp_Cup`）。
 
 - [ ] **Step 3：放到 L_Apartment 测试**
 
-打开 `L_Apartment` → 把 `SM_TestProp` 拖到场景里的桌子上 → 调整 Scale 让大小合理（meshy 出的资产通常单位偏小）。
+打开 `L_Apartment` → 把 `SM_TestProp_Cup` 从 Content Drawer 拖到场景里的桌子上 → 在 Details 面板调整 Scale 让大小合理（不同源导出单位可能不同，cup 大概应该 5~10cm 高）。
 
 - [ ] **Step 4：截图 + 视觉评估**
 
-点 Play → 在场景中走到杯子附近 → 截图保存到 `docs/decisions/screenshots/02-meshy-import-test.png`。
+点 Play → 在场景中走到道具附近 → 截图保存到 `docs/decisions/screenshots/02-asset-import-test.png`（手动建 screenshots 文件夹）。
 
-**关键评估清单（写到下一步的文档里）：**
+**评估清单（写到 Step 5 的文档里）：**
 - [ ] 拓扑质量看上去 OK（等距俯视下不出戏）
-- [ ] 材质 / 贴图导入正确
-- [ ] 风格跟 Starter Content 的占位家具能融合（或可通过统一 toon shader 融合）
-- [ ] 文件大小可接受（meshy 出的低模 5K 通常 < 5MB）
-- [ ] 整个流程（生成 → 下载 → 导入 → 命名 → 放进场景）耗时 < 15 分钟
+- [ ] 材质 / 贴图导入正确（不是粉红色 missing material）
+- [ ] 风格跟 Starter Content 占位家具能融合（或后期可通过 toon shader 统一）
+- [ ] 文件大小可接受（< 10MB）
+- [ ] 整个流程（找 → 下 → 导 → 放）耗时 < 15 分钟
 
 - [ ] **Step 5：写流程文档**
 
-创建 `D:\repos\sg-life-sim\docs\decisions\2026-05-23-meshy-import-workflow.md`：
+创建 `D:\repos\sg-life-sim\docs\decisions\2026-05-23-asset-import-workflow.md`：
 
-```markdown
-# meshy.ai → UE5 资产导入流程
+````markdown
+# 3D 资产导入流程（MVP 阶段）
 
-## 标准 prompt 模板
+## 当前策略
 
-所有 meshy 资产生成时使用以下 prompt 前缀，确保风格一致：
+MVP 阶段（Plan 1~2）使用**免费资源**管线，不用 meshy.ai。
+等真正需要新加坡独特资产（Plan 3+）再重新评估付费工具。
 
-\`\`\`
-[ASSET DESCRIPTION], isometric game asset, stylized semi-realistic,
-PBR materials, warm color palette
-\`\`\`
+## 资源源优先级
 
-## 生成参数
+1. **Fab Marketplace**（UE5 内置）—— 首选，免下载零配置
+2. **Sketchfab CC0**（sketchfab.com）—— 量最大，需手动下载
+3. **Kenney.nl**（kenney.nl/assets）—— 整套 kit，卡通风
+4. **Quixel Megascans**（UE5 内 Bridge）—— 真实材质 / 植物 / 石头，不适合人造道具
+5. **Polygon Asia 资产包**（约 $50 买断）—— 等明确需要东南亚城市感时考虑
+6. **meshy.ai**（$20/月）—— Plan 3+ 评估，目前 not in scope
 
-- Style: PBR
-- Topology: Quad
-- Polycount: Low / 5K（道具）/ 10K（建筑模块）
+## 命名约定
 
-## 导入步骤
+- Static Mesh: `SM_TestProp_<name>` (prototype) / `SM_<Category>_<Name>` (production)
+- 例：`SM_Food_KopitiamCup`, `SM_Furniture_Sofa`, `SM_Vehicle_Toyota`
 
-1. meshy 下载 FBX 到 `Content/MeshyTest/` 或最终目标文件夹
-2. UE5 → Content Drawer → Import → 选 FBX
-3. 导入设置（统一）：
-   - Static Mesh: ✅
-   - Import Materials: ✅
-   - Import Textures: ✅
-   - Auto Generate Collision: ✅
-4. 重命名：`SM_<类别>_<具体名>`（例如 `SM_Food_KopitiamCup`）
-5. 应用统一 Toon Outline 材质（Plan 2 实现，prototype 阶段跳过）
+## 导入设置（统一）
 
-## 已知 quirk
+- Static Mesh: ✅
+- Import Materials: ✅
+- Import Textures: ✅
+- Auto Generate Collision: ✅
+- 单位：UE5 默认 cm
 
-- meshy 出的 FBX 单位是 cm，跟 UE5 一致，通常不需缩放
-- 复杂物体（人形 / 多部件）拓扑差，**不要用 meshy 出主角 / NPC**
-- 材质名称 meshy 给的不规范，导入后手动重命名
+## 已知 quirks
 
-## 评估结果（本次测试）
+- Sketchfab glb 文件单位有时是 m，导入后 Scale 设 100 才正确
+- Kenney 资产风格非常卡通，跟其他源风格混用要后期 toon shader 拉齐
+- Fab 的免费资产经常变化，看到合适的尽快 add to library
 
-- 资产: meshy_kopitiam_cup
-- prompt: [完整 prompt]
-- 截图: docs/decisions/screenshots/02-meshy-import-test.png
-- 评分:
-  - 拓扑: [1-5]
-  - 材质: [1-5]
-  - 风格融合: [1-5]
-  - 整体可用度: [1-5]
-- 决策: [可用 / 需要后期调整 / 不可用]
-```
+## 何时升级到付费工具的触发条件
 
-填入实际评分。
+如果以下任一发生，重新评估是否启用 meshy.ai / 买 Polygon Asia 包：
+- 连续 3 次找不到需要的资产
+- 找到的资产无法风格统一（toon shader 救不回来）
+- 项目进入 Plan 3+ 并开始铺新加坡特色道具
+
+## 本次测试评估
+
+- 来源: [Fab / Sketchfab / Kenney]
+- 资产: [name]
+- 截图: docs/decisions/screenshots/02-asset-import-test.png
+- 评分（1~5）:
+  - 拓扑: []
+  - 材质: []
+  - 风格融合: []
+  - 整体可用度: []
+- 流程耗时: [] 分钟
+- 决策: [可用 / 需调整 / 换源重试]
+````
+
+填入实际数据。
 
 - [ ] **Step 6：Commit**
 
 ```powershell
-git add Content/MeshyTest/ docs/decisions/ Content/Levels/L_Apartment.umap
-git commit -m "feat(meshy): validate meshy.ai import workflow with kopitiam cup"
+cd D:\repos\sg-life-sim
+git add Content/ExternalAssets/ docs/decisions/ Content/Levels/L_Apartment.umap
+git commit -m "feat(assets): validate external asset import workflow (Fab/Sketchfab)"
 ```
 
 ---
@@ -1503,7 +1513,7 @@ git commit -m "feat(level): add L_HawkerCenter + menu-based location switching"
 
 ## 验证目标清单
 
-- [ ] UE5.6 项目能在本机正常构建 + 运行
+- [ ] UE5.7.4 项目能在本机正常构建 + 运行
   - 实测：[]
 - [ ] 编辑器冷启动 < 90 秒
   - 实测：[] 秒
