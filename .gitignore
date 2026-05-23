@@ -1,0 +1,48 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+
+# Unreal Engine generated
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+
+# Allow source files in /Source but ignore generated
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# UE5 项目根目录的生成文件
+/SGLifeSim.sln
+
+# 本地工具缓存
+/scripts/__pycache__/
+
+# 个人开发笔记 / 草稿
+/scratch/
+/notes-private/
