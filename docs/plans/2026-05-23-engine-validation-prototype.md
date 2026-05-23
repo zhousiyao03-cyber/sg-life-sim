@@ -717,12 +717,12 @@ git commit -m "feat(time): expose TimeSystem to Blueprint via GameInstanceSubsys
 - [ ] **Step 1：下载 Mixamo 资产**
 
 访问 [mixamo.com](https://mixamo.com) → 用 Adobe 账号登录 → 顶部 Characters tab → 挑一个**亚洲男性角色**（例如 "Liam"，可换其他）→ 点 "Download" → 选：
-- Format: **FBX for Unreal (.fbx)**
+- Format: **FBX Binary (.fbx)**（Mixamo 没有 "FBX For Unreal" 选项；**千万别选 "FBX For Unity"**，那会改骨骼命名约定导致导入 UE5 出错）
 - Pose: **T-pose**
 - 下载到 `D:\repos\sg-life-sim\Content\Characters\Player\Mixamo\SK_Player.fbx`（手动建文件夹）
 
 回到 Mixamo → Animations tab → 搜 "Idle" → 选一个站立 idle → "Download" → 设置：
-- Format: **FBX for Unreal (.fbx)**
+- Format: **FBX Binary (.fbx)**（Mixamo 没有 "FBX For Unreal" 选项；**千万别选 "FBX For Unity"**，那会改骨骼命名约定导致导入 UE5 出错）
 - Skin: **Without Skin**（共享主角的 skeleton）
 - Frames: **30**
 - 下载到 `Content/Characters/Player/Mixamo/Anim_Idle.fbx`
