@@ -4,10 +4,10 @@
 
 **Goal:** 在 1~2 周内搭出一个能跑的 UE5 原型，验证 spec 描述的核心机制（等距俯视 / 时间推进 / 对话 / 场景跳转 / meshy 资产）在 UE5 + 一人开发的条件下是否可行。
 
-**Architecture:** UE5.7.4 + C++（核心系统）+ Blueprint（业务逻辑）+ UMG（UI）。本 plan 实现最小可玩切片：1 个主角能在 2 个场景间走动、跟 1 个 NPC 说话、看到时间推进。所有"内容"都是占位符 —— spec 里的真实 NPC / 经济 / 关系 都不在这个 plan 范围。
+**Architecture:** UE5.6.1 + C++（核心系统）+ Blueprint（业务逻辑）+ UMG（UI）。本 plan 实现最小可玩切片：1 个主角能在 2 个场景间走动、跟 1 个 NPC 说话、看到时间推进。所有"内容"都是占位符 —— spec 里的真实 NPC / 经济 / 关系 都不在这个 plan 范围。
 
 **Tech Stack:**
-- UE5.7.4（Unreal Engine 5.7.4）
+- UE5.6.1 LTS（Unreal Engine 5.6.1，长期支持版本）
 - C++17（UE5 标准）+ Blueprint
 - UMG（UE5 的 UI 系统）
 - Git + Git LFS（资产存储）
@@ -28,7 +28,7 @@
 
 ## 验证目标清单（完成本 Plan 后逐项打勾）
 
-- [ ] UE5.7.4 项目能在本机正常构建 + 运行
+- [ ] UE5.6.1 项目能在本机正常构建 + 运行
 - [ ] 编辑器冷启动 < 90 秒（一人开发可忍受）
 - [ ] 等距俯视 45° 镜头在屏幕上看起来跟 Cult of the Lamb / Disco Elysium 一个调
 - [ ] 主角能在场景中用 WASD 走动 + 触发交互
@@ -120,7 +120,7 @@ D:\repos\sg-life-sim\
 
 ## 前置准备（开始 Task 1 前）
 
-1. **安装 UE5.7.4** 通过 Epic Games Launcher
+1. **安装 UE5.6.1** 通过 Epic Games Launcher
 2. **安装 Visual Studio 2022 Community**，确保勾选了 "Game development with C++" workload 和 ".NET desktop development"
 3. **安装 Git LFS**：`git lfs install` 在 PowerShell 跑一次
 4. **创建 Mixamo 账号**（mixamo.com，Adobe 账号免费）—— 用于下载主角模型 / 动画
@@ -137,11 +137,11 @@ D:\repos\sg-life-sim\
 - Create: `D:\repos\sg-life-sim\README.md`
 - Create: `D:\repos\sg-life-sim\Source\SGLifeSim\` 等（由 UE5 自动生成）
 
-**目标：** 在 `D:\repos\sg-life-sim` 创建一个 UE5.7.4 C++ 项目，配置 git-lfs，第一次 commit。
+**目标：** 在 `D:\repos\sg-life-sim` 创建一个 UE5.6.1 C++ 项目，配置 git-lfs，第一次 commit。
 
 - [ ] **Step 1：UE5 Editor 创建项目**
 
-打开 Epic Games Launcher → Library → 启动 UE 5.7.4 → 在 Project Browser 选 "Games" → "Blank" → 配置如下：
+打开 Epic Games Launcher → Library → 启动 UE 5.6 → 在 Project Browser 选 "Games" → "Blank" → 配置如下：
 - **Project Type:** C++
 - **Target Platform:** Desktop
 - **Quality Preset:** Maximum（一人开发可调）
@@ -277,17 +277,17 @@ git lfs track "*.uasset" "*.umap" "*.fbx" "*.png" "*.wav"
 - 当前实施计划：[docs/plans/2026-05-23-engine-validation-prototype.md](docs/plans/2026-05-23-engine-validation-prototype.md)
 
 ## 技术栈
-- UE5.7.4
+- UE5.6.1
 - C++17 + Blueprint
 - Git + Git LFS
 
 ## 开发环境
 - Windows 11
 - Visual Studio 2022 Community（含 "Game development with C++" workload）
-- UE5.7.4 通过 Epic Games Launcher 安装
+- UE5.6.1 通过 Epic Games Launcher 安装
 
 ## 上手
-1. 安装 UE5.7.4 + VS2022 + Git LFS
+1. 安装 UE5.6.1 + VS2022 + Git LFS
 2. clone 本仓库
 3. 双击 `SGLifeSim.uproject` 打开
 4. 等待第一次编译（5~10 分钟）
@@ -309,7 +309,7 @@ git status
 - 没有 `Intermediate/` 或 `Binaries/` 被加入
 
 ```powershell
-git commit -m "feat: initial UE5.7.4 C++ project scaffolding via Editor"
+git commit -m "feat: initial UE5.6.1 C++ project scaffolding via Editor"
 git log --oneline -5
 ```
 
@@ -1513,7 +1513,7 @@ git commit -m "feat(level): add L_HawkerCenter + menu-based location switching"
 
 ## 验证目标清单
 
-- [ ] UE5.7.4 项目能在本机正常构建 + 运行
+- [ ] UE5.6.1 项目能在本机正常构建 + 运行
   - 实测：[]
 - [ ] 编辑器冷启动 < 90 秒
   - 实测：[] 秒
