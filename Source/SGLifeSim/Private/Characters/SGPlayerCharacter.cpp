@@ -37,6 +37,8 @@
 #include "Systems/WeaponTypes.h"
 #include "Systems/WantedSubsystem.h"
 #include "Systems/SGAudioSubsystem.h"
+#include "Systems/WeatherSubsystem.h"
+#include "Systems/WeatherTypes.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/SGStreetNPC.h"
 #include "Systems/SanitySubsystem.h"
@@ -553,9 +555,18 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 	{
 		const FText BlockText = UEnum::GetDisplayValueAsText(TimeSys->GetCurrentBlock());
 		const FText WeekdayText = UEnum::GetDisplayValueAsText(TimeSys->GetWeekday());
+
+		// 天气（H 块）。
+		FString WeatherStr;
+		if (UWeatherSubsystem* Weather = GI->GetSubsystem<UWeatherSubsystem>())
+		{
+			WeatherStr = FString::Printf(TEXT(" · %s"),
+				*UEnum::GetDisplayValueAsText(Weather->GetWeather()).ToString());
+		}
+
 		HudWidget->SetStatusText(FText::FromString(FString::Printf(
-			TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 菜单"),
-			TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString())));
+			TEXT("Day %d · %s · %s%s    [E] 交谈  [T] 推进时间  [M] 菜单"),
+			TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString(), *WeatherStr)));
 	}
 
 	// 钱包行（现金 + 净资产，有按揭时追加房贷余额）

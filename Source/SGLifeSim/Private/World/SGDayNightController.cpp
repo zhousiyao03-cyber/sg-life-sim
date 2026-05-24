@@ -1,5 +1,6 @@
 #include "World/SGDayNightController.h"
 #include "Systems/TimeSubsystem.h"
+#include "Systems/WeatherSubsystem.h"
 
 #include "Engine/DirectionalLight.h"
 #include "Engine/SkyLight.h"
@@ -115,9 +116,18 @@ void ASGDayNightController::ApplyLighting(ETimeBlock Block)
 
 	if (Fog)
 	{
+		// 叠加天气雾（H 块）：时间块基础雾 + 当前天气额外雾（雨/雾天更浓）。
+		float FinalFogDensity = FogDensity;
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (UWeatherSubsystem* Weather = GI->GetSubsystem<UWeatherSubsystem>())
+			{
+				FinalFogDensity += Weather->GetWeatherFogDensity();
+			}
+		}
 		if (UExponentialHeightFogComponent* C = Fog->GetComponent())
 		{
-			C->SetFogDensity(FogDensity);
+			C->SetFogDensity(FinalFogDensity);
 			C->SetFogInscatteringColor(FogColor);
 		}
 	}

@@ -4,6 +4,8 @@
 #include "World/SGBuildingEntrance.h"
 #include "World/SGSimpleMover.h"
 #include "World/SGTrafficLight.h"
+#include "World/SGHelicopter.h"
+#include "World/SGDrivableCar.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -191,4 +193,39 @@ void USGCityPopulatorSubsystem::PopulateTraffic(UWorld& InWorld)
 	{
 		SpawnCar(FVector(60.f, -6000 + i * 1500.f, 90.f), FVector(0, 1, 0));
 	}
+
+	// 直升机（H 块）：停在城市一角的停机坪，走近按 E 登机起飞。
+	if (ASGHelicopter* Heli = InWorld.SpawnActor<ASGHelicopter>(
+			ASGHelicopter::StaticClass(), FVector(-3500.f, 3500.f, 120.f), FRotator::ZeroRotator, P))
+	{
+		(void)Heli; // 外观由类内占位，飞行逻辑自带
+	}
+
+	// 一辆停着的可上车摩托（占位小号 DrivableCar 变体；真摩托模型待美术换皮）。
+	if (ASGDrivableCar* Bike = InWorld.SpawnActor<ASGDrivableCar>(
+			ASGDrivableCar::StaticClass(), FVector(800.f, -300.f, 60.f), FRotator::ZeroRotator, P))
+	{
+		(void)Bike;
+	}
+
+	// 警察局 / 帮派地盘地标（H 块）：占位大楼 + 标记色，城市里两个特征地标。
+	UStaticMesh* LandmarkCube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	auto SpawnLandmark = [&](const FVector& Loc, const FVector& Scale, const TCHAR* MatPath)
+	{
+		AActor* A = InWorld.SpawnActor<AActor>(AActor::StaticClass(), Loc, FRotator::ZeroRotator, P);
+		if (!A || !LandmarkCube) { return; }
+		UStaticMeshComponent* MC = NewObject<UStaticMeshComponent>(A);
+		MC->RegisterComponent();
+		A->SetRootComponent(MC);
+		MC->SetStaticMesh(LandmarkCube);
+		MC->SetWorldScale3D(Scale);
+		if (UMaterialInterface* M = LoadObject<UMaterialInterface>(nullptr, MatPath))
+		{
+			MC->SetMaterial(0, M);
+		}
+	};
+	// 警察局：蓝色大楼（MI_Car2 是蓝）。
+	SpawnLandmark(FVector(4000.f, -4000.f, 300.f), FVector(6.f, 6.f, 6.f), TEXT("/Game/Materials/MI_Car2.MI_Car2"));
+	// 帮派地盘：红色大楼（MI_Car 是红）——这一片也是帮派 NPC 聚集处。
+	SpawnLandmark(FVector(-4000.f, -4000.f, 300.f), FVector(6.f, 6.f, 6.f), TEXT("/Game/Materials/MI_Car.MI_Car"));
 }
