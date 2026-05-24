@@ -93,4 +93,8 @@ public:
 	// --- Ending ---
 	UPROPERTY()
 	EEnding ChosenEnding = EEnding::None;
+
+	// --- Sanity（Plan 16，恐怖） ---
+	UPROPERTY()
+	int32 Sanity = 100;
 };

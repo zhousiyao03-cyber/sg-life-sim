@@ -41,6 +41,10 @@ struct FHorrorEventDef
 	UPROPERTY(BlueprintReadOnly, Category = "Horror")
 	int32 HealthDelta = 0;
 
+	/** 理智消耗（恐惧，正值=扣多少理智）。 */
+	UPROPERTY(BlueprintReadOnly, Category = "Horror")
+	int32 SanityCost = 0;
+
 	/** 加权随机的基础权重。 */
 	UPROPERTY(BlueprintReadOnly, Category = "Horror")
 	int32 Weight = 0;

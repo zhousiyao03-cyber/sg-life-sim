@@ -4,6 +4,7 @@
 #include "Systems/TimeSubsystem.h"
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
+#include "Systems/SanitySubsystem.h"
 
 void UHorrorEventSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -11,6 +12,7 @@ void UHorrorEventSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	Collection.InitializeDependency(UTimeSubsystem::StaticClass());
 	Collection.InitializeDependency(UPlayerStateSubsystem::StaticClass());
+	Collection.InitializeDependency(USanitySubsystem::StaticClass());
 
 	// 默认随时间变化的种子，让每局不同；测试可 SetSeed 覆盖。
 	Stream.Initialize((int32)(FDateTime::Now().GetTicks() & 0x7fffffff));
@@ -58,7 +60,12 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 	LastRolledDay = DayNumber;
 
 	const bool bGhost = IsGhostMonth();
-	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost));
+	int32 DreadBonus = 0;
+	if (USanitySubsystem* Sanity = GetGameInstance()->GetSubsystem<USanitySubsystem>())
+	{
+		DreadBonus = Sanity->GetExtraDreadWeight();
+	}
+	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus));
 }
 
 bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)
@@ -82,6 +89,13 @@ bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)
 			if (Def.HealthDelta != 0)
 			{
 				PS->ModifyAttribute(EPlayerAttribute::Health, Def.HealthDelta);
+			}
+		}
+		if (USanitySubsystem* Sanity = GI->GetSubsystem<USanitySubsystem>())
+		{
+			if (Def.SanityCost != 0)
+			{
+				Sanity->Drain(Def.SanityCost);
 			}
 		}
 	}

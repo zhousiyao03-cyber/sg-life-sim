@@ -24,7 +24,8 @@ public:
 
 	/**
 	 * 加权随机选一个事件。bGhostMonth=false 时鬼月限定事件不入池。
+	 * DreadBonus（低理智来的额外恐惧）从「无事」权重里扣，越大越容易出事。
 	 * 注入 FRandomStream → 可复现。
 	 */
-	static EHorrorEvent PickEvent(FRandomStream& Stream, bool bGhostMonth);
+	static EHorrorEvent PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus = 0);
 };

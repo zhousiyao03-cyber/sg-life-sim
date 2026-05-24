@@ -29,6 +29,7 @@
 #include "Systems/MilestoneSubsystem.h"
 #include "Systems/MilestoneSystem.h"
 #include "Systems/HorrorEventSubsystem.h"
+#include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
@@ -401,6 +402,13 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 			PS->GetAttribute(EPlayerAttribute::Mood),
 			PS->GetAttribute(EPlayerAttribute::Health),
 			PS->GetAttribute(EPlayerAttribute::Professional));
+		// 理智（恐怖玩法核心）：值 + 状态档
+		if (USanitySubsystem* Sanity = GI->GetSubsystem<USanitySubsystem>())
+		{
+			Stats += FString::Printf(TEXT(" · 理智 %d（%s）"),
+				Sanity->GetSanity(),
+				*UEnum::GetDisplayValueAsText(Sanity->GetState()).ToString());
+		}
 		HudWidget->SetStatsText(FText::FromString(Stats));
 	}
 

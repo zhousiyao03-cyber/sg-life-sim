@@ -9,6 +9,7 @@
 #include "Systems/AssetsSubsystem.h"
 #include "Systems/CareerSubsystem.h"
 #include "Systems/EndingSubsystem.h"
+#include "Systems/SanitySubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString USaveGameSubsystem::DefaultSlot = TEXT("SGLifeSim_Slot0");
@@ -67,6 +68,10 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 	{
 		Save.ChosenEnding = End->GetChosenEnding();
 	}
+	if (const USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
+	{
+		Save.Sanity = San->GetSanityForSave();
+	}
 }
 
 void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
@@ -115,6 +120,10 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	if (UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
 	{
 		End->RestoreChosenEnding(Save.ChosenEnding);
+	}
+	if (USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
+	{
+		San->RestoreFromSave(Save.Sanity);
 	}
 }
 
