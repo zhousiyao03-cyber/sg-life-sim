@@ -1,0 +1,64 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "SGStreetNPC.generated.h"
+
+class UStaticMeshComponent;
+
+/** 街头 NPC 类型。 */
+UENUM(BlueprintType)
+enum class EStreetNpcKind : uint8
+{
+	Pedestrian UMETA(DisplayName = "路人"),
+	Police     UMETA(DisplayName = "警察"),
+	Gangster   UMETA(DisplayName = "帮派"),
+};
+
+/**
+ * 街头 NPC（第9块 GTA）。占位胶囊 + 血量 + 简单行为：
+ *  - 路人：被打掉血，死了倒地（隐藏）。
+ *  - 警察：玩家通缉星 >0 时朝玩家移动追捕，靠近就「逮捕」（清通缉）。
+ *  - 帮派：见玩家就敌对靠近（占位行为同警察追，但不清通缉）。
+ *
+ * 全占位逻辑/AI，无寻路（直线朝目标）。受击/死亡动画待美术。
+ */
+UCLASS()
+class SGLIFESIM_API ASGStreetNPC : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	ASGStreetNPC();
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	/** 配置类型（生成时设）。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Street")
+	void ConfigureKind(EStreetNpcKind InKind);
+
+	/** 受到伤害（玩家出拳调）。掉血、死亡。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Street")
+	void TakeMeleeHit(int32 Damage);
+
+	EStreetNpcKind GetKind() const { return Kind; }
+	bool IsDead() const { return bDead; }
+
+protected:
+	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Street")
+	TObjectPtr<UStaticMeshComponent> Body;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Street")
+	TObjectPtr<UStaticMeshComponent> Head;
+
+private:
+	/** 找玩家 Pawn（追捕用）。 */
+	AActor* FindPlayer() const;
+
+	EStreetNpcKind Kind = EStreetNpcKind::Pedestrian;
+	int32 Health = 100;
+	bool bDead = false;
+	float ChaseSpeed = 280.f; // cm/s
+};

@@ -33,6 +33,7 @@
 #include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/NightCommuteSubsystem.h"
 #include "World/LocationManagerSubsystem.h"
+#include "World/SGStreetNPC.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -246,6 +247,9 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 		// 攀爬：legacy 动作 Climb（C）→ 贴墙时切入/退出攀爬模式。
 		PlayerInputComponent->BindAction(TEXT("Climb"), IE_Pressed, this, &ASGPlayerCharacter::ToggleClimb);
+
+		// 出拳：legacy 动作 Punch（F）→ 近战打前方 StreetNPC。
+		PlayerInputComponent->BindAction(TEXT("Punch"), IE_Pressed, this, &ASGPlayerCharacter::Punch);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
@@ -661,4 +665,37 @@ void ASGPlayerCharacter::TickClimb()
 	// 贴墙：把自己吸附到离墙固定距离，避免飘离。
 	const FVector Desired = Hit.ImpactPoint + ClimbWallNormal * 45.f; // 距墙 45cm
 	SetActorLocation(FVector(Desired.X, Desired.Y, Start.Z), /*bSweep=*/false);
+}
+
+void ASGPlayerCharacter::Punch()
+{
+	// 朝视线前方 2m 射线，打到 StreetNPC 就造成伤害（占位近战，无动画）。
+	const AController* Ctrl = GetController();
+	if (!Ctrl) { return; }
+
+	const FVector Start = GetActorLocation();
+	const FVector Forward = Ctrl->GetControlRotation().Vector();
+	const FVector End = Start + Forward * 200.f;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
+	{
+		if (ASGStreetNPC* Npc = Cast<ASGStreetNPC>(Hit.GetActor()))
+		{
+			Npc->TakeMeleeHit(34); // 三拳打倒一个路人（100 血）
+		}
+	}
+
+	// 出拳反馈：HUD 气泡（占位，无打击动画）。
+	if (HudWidget)
+	{
+		HudWidget->SetDialogueText(FText::FromString(TEXT("👊 出拳")));
+		FTimerDelegate ClearDel = FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }
+		});
+		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 1.f, /*bLoop=*/false);
+	}
 }

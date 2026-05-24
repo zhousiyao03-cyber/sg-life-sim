@@ -72,6 +72,9 @@ private:
 	/** 攀爬键（C）：贴墙时切入/退出攀爬模式。 */
 	void ToggleClimb();
 
+	/** 出拳键（F）：朝视线前方近战，打到 StreetNPC 造成伤害（第9块）。 */
+	void Punch();
+
 	/** 进入攀爬：前方有墙才成立。关重力、贴墙。 */
 	void StartClimb();
 
