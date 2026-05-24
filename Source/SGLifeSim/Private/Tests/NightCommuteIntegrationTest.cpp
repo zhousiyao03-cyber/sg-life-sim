@@ -10,6 +10,8 @@
 #include "Systems/SanitySubsystem.h"
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
+#include "Systems/HorrorSequenceSubsystem.h"
+#include "Systems/HorrorSceneTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -75,16 +77,24 @@ bool FNightCommuteIntegrationTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("wait costs energy 8"), PS->GetAttribute(EPlayerAttribute::Energy),
 		80 - FNightCommuteSystem::WaitEnergyCost);
 
-	// 赶紧进去且赌输：理智重扣 22。
+	// 赶紧进去且赌输（Plan 24）：不再当场扣理智，而是「进电梯恐怖场景」——
+	// 理智 / 图鉴交由场景 ExitScene 结算。这里验证已进场景、且 MakeChoice 未当场扣理智。
 	Sanity->RestoreFromSave(100);
 	PS->SetAttribute(EPlayerAttribute::Energy, 80);
 	Commute->SetSeed(FindSeedWhereStepInGoesBad());
 	const FNightCommuteOutcome Bad = Commute->MakeChoice(ENightCommuteChoice::StepIn);
 	TestTrue(TEXT("step-in went bad"), Bad.bSomethingHappened);
-	TestEqual(TEXT("bad outcome drained sanity by 22"), Sanity->GetSanity(),
-		100 - FNightCommuteSystem::StepInBadSanityCost);
+	if (UHorrorSequenceSubsystem* Seq = GI->GetSubsystem<UHorrorSequenceSubsystem>())
+	{
+		TestTrue(TEXT("bad step-in enters horror scene"), Seq->IsInScene());
+		TestEqual(TEXT("active scene is elevator"), Seq->GetActiveScene(), EHorrorScene::Elevator);
+		// 理智不由 MakeChoice 扣（留给场景结算）；模拟演出收尾，理智应被扣 20。
+		Seq->ExitScene();
+		TestEqual(TEXT("scene resolves sanity -20"), Sanity->GetSanity(), 100 - 20);
+		TestFalse(TEXT("scene cleared after exit"), Seq->IsInScene());
+	}
 
-	// 赶紧进去但赌赢：理智仅轻扣 4。
+	// 赶紧进去但赌赢：没招事，理智仅轻扣 4（不进场景）。
 	Sanity->RestoreFromSave(100);
 	Commute->SetSeed(FindSeedWhereStepInIsFine());
 	const FNightCommuteOutcome Ok = Commute->MakeChoice(ENightCommuteChoice::StepIn);

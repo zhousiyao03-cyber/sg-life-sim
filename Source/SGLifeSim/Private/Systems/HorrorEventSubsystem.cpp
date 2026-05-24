@@ -6,6 +6,8 @@
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/SanityTypes.h"
+#include "Systems/HorrorSequenceSubsystem.h"
+#include "Systems/HorrorSceneTypes.h"
 
 void UHorrorEventSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -70,7 +72,23 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 		bLowSanity = (uint8)Sanity->GetState() >= (uint8)ESanityState::Disturbed;
 	}
 	// 每天深夜必出一条恐怖事件（「无事」不入池）；抽哪条仍按权重随机，鬼月/幻觉门控照旧。
-	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity, /*bGuaranteeEvent=*/true));
+	const EHorrorEvent Picked = FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity, /*bGuaranteeEvent=*/true);
+
+	// 电梯空楼层升级为真场景演出（Plan 24）：进电梯关卡，理智 / 图鉴由场景结算。
+	// EnterScene 失败（无 World / 已在场景中）则退回常规 ApplyEvent，保证不漏处理。
+	if (Picked == EHorrorEvent::ElevatorGhostFloor)
+	{
+		if (UHorrorSequenceSubsystem* Seq = GetGameInstance()->GetSubsystem<UHorrorSequenceSubsystem>())
+		{
+			LastEvent = Picked;
+			if (Seq->EnterScene(EHorrorScene::Elevator))
+			{
+				return;
+			}
+		}
+	}
+
+	ApplyEvent(Picked);
 }
 
 bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)

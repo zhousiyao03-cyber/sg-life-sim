@@ -6,6 +6,8 @@
 #include "Systems/SanitySubsystem.h"
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
+#include "Systems/HorrorSequenceSubsystem.h"
+#include "Systems/HorrorSceneTypes.h"
 
 void UNightCommuteSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -40,22 +42,39 @@ FNightCommuteOutcome UNightCommuteSubsystem::MakeChoice(ENightCommuteChoice Choi
 {
 	const FNightCommuteOutcome Out = FNightCommuteSystem::Resolve(Choice, Stream);
 
-	if (UGameInstance* GI = GetGameInstance())
+	UGameInstance* GI = GetGameInstance();
+
+	// 精力代价无论哪条路都扣（进去这一趟 / 等 / 爬楼梯都耗精力）。
+	if (GI && Out.EnergyDelta != 0)
 	{
-		if (Out.SanityDelta != 0)
+		if (UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
 		{
-			if (USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
+			PS->ModifyAttribute(EPlayerAttribute::Energy, Out.EnergyDelta);
+		}
+	}
+
+	// 赌输（犯禁忌进了电梯、招了事）→ 升级为真场景演出（Plan 24）：
+	// 把你拖进电梯恐怖场景，理智 / 图鉴交由场景结算，这里不再扣理智、也不弹
+	// 「身后有人」文案（改由场景演出 + 事后文案呈现）。
+	if (Out.bSomethingHappened && GI)
+	{
+		if (UHorrorSequenceSubsystem* Seq = GI->GetSubsystem<UHorrorSequenceSubsystem>())
+		{
+			if (Seq->EnterScene(EHorrorScene::Elevator))
 			{
-				if (Out.SanityDelta > 0) { San->Restore(Out.SanityDelta); }
-				else                     { San->Drain(-Out.SanityDelta); }
+				return Out; // 已进场景：不走常规理智结算 / 文案广播。
 			}
 		}
-		if (Out.EnergyDelta != 0)
+		// EnterScene 失败（无 World / 已在场景中）→ 退回常规理智结算，保证不漏处理。
+	}
+
+	// 常规理智结算（等下一趟 / 走楼梯 / 赌赢 / 赌输但没进成场景）。
+	if (GI && Out.SanityDelta != 0)
+	{
+		if (USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
 		{
-			if (UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
-			{
-				PS->ModifyAttribute(EPlayerAttribute::Energy, Out.EnergyDelta);
-			}
+			if (Out.SanityDelta > 0) { San->Restore(Out.SanityDelta); }
+			else                     { San->Drain(-Out.SanityDelta); }
 		}
 	}
 
