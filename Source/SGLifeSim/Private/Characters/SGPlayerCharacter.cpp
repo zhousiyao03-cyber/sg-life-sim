@@ -32,6 +32,7 @@
 #include "Systems/HorrorEventSubsystem.h"
 #include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/NightCommuteSubsystem.h"
+#include "World/LocationManagerSubsystem.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -40,6 +41,8 @@
 #include "UI/SGEndingWidget.h"
 #include "UI/SGHudWidget.h"
 #include "UI/SGLocationMenuWidget.h"
+#include "UI/SGMinimapWidget.h"
+#include "World/LocationRegistry.h"
 
 namespace
 {
@@ -105,6 +108,17 @@ void ASGPlayerCharacter::BeginPlay()
 		{
 			HudWidget->AddToViewport();
 		}
+
+		// 城市枢纽关卡才显示小地图。
+		const FString Level = UGameplayStatics::GetCurrentLevelName(this, /*bRemovePrefix=*/true);
+		if (Level.Contains(FLocationRegistry::GetCityLevelName().ToString()))
+		{
+			MinimapWidget = CreateWidget<USGMinimapWidget>(PC, USGMinimapWidget::StaticClass());
+			if (MinimapWidget)
+			{
+				MinimapWidget->AddToViewport();
+			}
+		}
 	}
 
 	// 订阅成就解锁 → HUD toast。Director / Progress 在 GameInstance 层跨关卡保留，
@@ -137,6 +151,23 @@ void ASGPlayerCharacter::BeginPlay()
 		}
 	}
 
+	// 从室内回到城市枢纽：把玩家从 PlayerStart 拉回离开时的建筑门口（只生效一次）。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (USGLocationManagerSubsystem* Loc = GI->GetSubsystem<USGLocationManagerSubsystem>())
+		{
+			FVector ReturnLoc; FRotator ReturnRot;
+			if (Loc->ConsumePendingReturn(ReturnLoc, ReturnRot))
+			{
+				SetActorLocation(ReturnLoc);
+				if (AController* Ctrl = GetController())
+				{
+					Ctrl->SetControlRotation(ReturnRot);
+				}
+			}
+		}
+	}
+
 	// 起步先站立
 	UpdateLocomotionAnimation();
 }
@@ -146,6 +177,11 @@ void ASGPlayerCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	UpdateLocomotionAnimation();
 	DrawPrototypeHUD();
+
+	if (MinimapWidget)
+	{
+		MinimapWidget->UpdatePlayerDot(GetActorLocation());
+	}
 }
 
 void ASGPlayerCharacter::UpdateLocomotionAnimation()
@@ -214,19 +250,20 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 AActor* ASGPlayerCharacter::FindNearbyInteractable() const
 {
-	TArray<AActor*> Npcs;
-	UGameplayStatics::GetAllActorsOfClass(this, ASGInteractableNPC::StaticClass(), Npcs);
+	// 按接口找：NPC 和城市建筑入口都实现 IInteractableInterface，统一发现。
+	TArray<AActor*> Interactables;
+	UGameplayStatics::GetAllActorsWithInterface(this, UInteractableInterface::StaticClass(), Interactables);
 
 	AActor* Nearest = nullptr;
 	float NearestDistSq = FMath::Square(300.f); // 交互距离 3m
 	const FVector MyLoc = GetActorLocation();
-	for (AActor* Npc : Npcs)
+	for (AActor* Actor : Interactables)
 	{
-		const float DistSq = FVector::DistSquared(MyLoc, Npc->GetActorLocation());
+		const float DistSq = FVector::DistSquared(MyLoc, Actor->GetActorLocation());
 		if (DistSq < NearestDistSq)
 		{
 			NearestDistSq = DistSq;
-			Nearest = Npc;
+			Nearest = Actor;
 		}
 	}
 	return Nearest;

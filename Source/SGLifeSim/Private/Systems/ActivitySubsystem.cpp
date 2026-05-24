@@ -5,6 +5,7 @@
 #include "Systems/EconomyTypes.h"
 #include "Systems/TimeSubsystem.h"
 #include "Systems/SanitySubsystem.h"
+#include "World/LocationRegistry.h"
 #include "Kismet/GameplayStatics.h"
 
 int32 UActivitySubsystem::GetCurrentEnergy() const
@@ -90,12 +91,14 @@ TArray<EActivityType> UActivitySubsystem::GetActivitiesForCurrentLevel() const
 {
 	const FString Level = UGameplayStatics::GetCurrentLevelName(GetGameInstance(), /*bRemovePrefix=*/true);
 
-	// 食阁：吃饭 / 听八卦；其余（出租屋为主）：睡觉 / 学习 / 接私活 / 健身。
-	if (Level.Contains(TEXT("Hawker")))
+	// 由地点注册表统一决定本地点可做的活动（单一事实源）。
+	TArray<EActivityType> Acts = FLocationRegistry::GetActivitiesForLevel(Level);
+	if (Acts.Num() > 0)
 	{
-		return { EActivityType::EatHawker, EActivityType::Gossip };
+		return Acts;
 	}
-	// 出租屋（含家里神台）：睡觉 / 学习 / 接私活 / 健身 / 拜拜祈福。
+
+	// 兜底：未登记的关卡（如旧测试关卡）退回出租屋活动集，保证菜单不空。
 	return { EActivityType::Sleep, EActivityType::Study, EActivityType::FreelanceCode,
 		EActivityType::Exercise, EActivityType::PrayPuja };
 }

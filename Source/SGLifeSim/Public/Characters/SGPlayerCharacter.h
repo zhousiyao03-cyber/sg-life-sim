@@ -12,6 +12,7 @@ class USGHudWidget;
 class USGLocationMenuWidget;
 class USGDialogueWidget;
 class USGEndingWidget;
+class USGMinimapWidget;
 enum class EEnding : uint8;
 struct FInputActionValue;
 
@@ -129,6 +130,10 @@ private:
 	/** 结局演出 overlay（纯 C++ UMG），选定结局时盖满屏。懒创建。 */
 	UPROPERTY(Transient)
 	TObjectPtr<USGEndingWidget> EndingWidget;
+
+	/** 城市小地图（纯 C++ UMG），仅在城市枢纽关卡显示，每帧更新玩家点。懒创建。 */
+	UPROPERTY(Transient)
+	TObjectPtr<USGMinimapWidget> MinimapWidget;
 
 	/** 对话气泡 N 秒后自动消失的计时器。 */
 	FTimerHandle DialogueClearTimer;
