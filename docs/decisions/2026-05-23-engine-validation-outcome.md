@@ -11,8 +11,8 @@
 - [ ] 编辑器冷启动 < 90 秒 —— 未单独计时（编辑器全程开启，未冷启动测量）
 - [x] 等距俯视 45° 镜头看起来对 —— 正交投影 Pitch/Yaw=-45，OrthoWidth=700（用户拍板），截图见 Saved/Screenshots
 - [x] 主角能 WASD 走动 + 触发交互 —— 已验证（方向正确、撞墙停、稳站地板、相机跟随）
-- [~] 时间块能推进 —— 系统就绪：`UTimeSubsystem` + T 键绑定；时间系统有单元测试（Task 2）；HUD 用屏幕文本显示
-- [~] 对话框能弹出 —— 交互链路已验证（E→OnInteract，日志确认）；显示用屏幕文本替代 UMG（见下「已知限制」）
+- [x] 时间块能推进 —— `UTimeSubsystem` + T 键绑定，有单元测试（Task 2）；HUD 状态行由 `USGHudWidget`（C++ UMG）显示
+- [x] 对话框能弹出 —— E→OnInteract（日志确认）+ NPC 台词显示在 `USGHudWidget` 对话气泡（C++ UMG），5 秒自动消失
 - [x] 两个场景能切换 —— M 键 OpenLevel，实测 L_Rental ↔ L_HawkerCenter 切换成功，pawn 正确重生
 - [~] 外部资产导入 —— Mixamo 导入管线已验证；外部素材下载需人手浏览器步骤（见 asset-import-workflow.md）
 - [x] 全部提交到 git 仓库
@@ -50,27 +50,31 @@ Blueprint 仅作薄壳（BP_PlayerCharacter 设资产引用）。配合 UE5 MCP 
 
 ## 已知限制 / 与原 plan 的偏差
 
-1. **UMG widget 未做成正式控件**。当前工具链下 UMG 控件树编辑不可达
-   （MCP widget-authoring 子动作不在 manage_blueprint 的 schema 枚举里；Python 不暴露 WidgetTree）。
-   因此 W_HUD / W_DialogueBox / W_LocationMenu 用 **`AddOnScreenDebugMessage` 屏幕文本 + C++ 逻辑**实现等效功能：
-   - HUD：每帧画「Day X · 周几 · 时间块 + 操作提示」（`ASGPlayerCharacter::DrawPrototypeHUD`）
-   - 对话：E 交互时画 NPC 台词（`ASGInteractableNPC::OnInteract`）
-   - 场景切换：M 直接在两关卡间跳转（替代弹出菜单）
-   这些屏幕文本在实机视口可见，但**不会出现在高分截图里**（UE 截图路径不含 debug canvas）。
-   → Plan 2 待工具修复或手动在编辑器里把这三个换成真正的 UMG。
+1. **UMG widget**（已基本解决，2026-05-24 补）。MCP/Python 不能编辑 BP 控件树
+   （widget-authoring 子动作不在 schema；Python 不暴露 WidgetTree），但**绕开 BP、纯 C++ 写 UMG 可行**：
+   `USGHudWidget : UUserWidget` 在 `RebuildWidget()` 里用 `WidgetTree->ConstructWidget` 搭控件树，
+   `ASGPlayerCharacter` `CreateWidget + AddToViewport`。已替换原来的屏幕文本：
+   - HUD 状态行（左上）：「Day X · 周几 · 时间块 + 操作提示」
+   - 交互提示 + 对话气泡（底部）：靠近显示「[E] 对话」，交互显示 NPC 台词、5 秒消失
+   - 场景切换：M 直接跳转（仍未做弹出菜单，原型够用）
+   做这步需**关编辑器完整 rebuild**（新 UCLASS 反射 Live Coding 不刷新）——本次已编译通过。
+   仅剩"切换菜单"这类交互式 widget（按钮/列表）未做，留待真正需要时。
 
 2. **场景命名**：用 `L_Rental` / `L_HawkerCenter`（plan 原写 `L_Apartment`，等价）。
 
-3. **Live Coding 反射限制**：本会话新增的 C++ UPROPERTY（`IdleAnim`/`WalkAnim`/`WalkSpeedThreshold` 等）
-   与 `OrthoWidth=700` 改动，靠 Live Coding 函数体 + LoadObject 兜底在跑；
-   **下次关编辑器做一次完整 Build** 后这些才会 bake 进反射、在 BP 面板可见可调。
+3. **Live Coding 反射限制（已做完整 rebuild）**：本会话新增的 C++ UPROPERTY（`IdleAnim`/`WalkAnim`/
+   `WalkSpeedThreshold` 等）与 `OrthoWidth=700`，原先靠 Live Coding 函数体 + LoadObject 兜底；
+   **2026-05-24 已关编辑器做完整 Build**（连同新 UMG 类一起 bake，编译通过）。重开编辑器后这些属性即在
+   BP 面板可见可调，`UpdateLocomotionAnimation` 的 LoadObject 兜底可保留作安全网或清理。
 
 4. **外部资产下载**（Task 7）需浏览器登录 Fab/Sketchfab，是唯一留给人手的 5 分钟步骤。
 
 ## 经验教训（记入 future plans）
 
-- UE5 MCP 自动化桥能覆盖绝大多数编辑器操作（导 FBX、建蓝图壳、配 Enhanced Input、摆关卡、PIE、截图），
-  但 **UMG 控件树编辑** 和 **新 C++ 类型的反射刷新** 是两个明确空白，需人手或完整重编译。
+- UE5 MCP 自动化桥能覆盖绝大多数编辑器操作（导 FBX、建蓝图壳、配 Enhanced Input、摆关卡、PIE、截图）。
+  两个空白及其绕过：① **BP 控件树编辑不可达** → 改用**纯 C++ UMG**（`UUserWidget::RebuildWidget` +
+  `WidgetTree->ConstructWidget`），完全不碰 BP widget；② **新 C++ 类型/UPROPERTY 反射 Live Coding 不刷新**
+  → 关编辑器跑一次 `Build.bat`（本机增量约 7 秒）即可，编辑器关着时可反复编译迭代到通过再重开。
 - Mixamo 动画 FBX 必须显式指定目标 skeleton（Python FbxImportUI），否则骨骼对不上。
 - locomotion 不必上 AnimBlueprint：纯 C++ 按速度 `PlayAnimation` 单节点切换，简单可靠且符合 C++ 核心取向。
 - 验证「看不见的逻辑」优先用日志/状态查询（如 `[NPC]` 日志、`GetCurrentLevelName`），别只依赖截图。
