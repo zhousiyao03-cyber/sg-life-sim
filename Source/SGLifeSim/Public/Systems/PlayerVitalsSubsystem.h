@@ -46,6 +46,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Vitals")
 	void SetHealth(int32 NewHealth);
 
+	/**
+	 * 脱战自动回血（玩家角色每帧驱动）：距上次受伤超过 RegenDelaySeconds 后，
+	 * 按 RegenPerSecond 缓慢回血到满。GTA/现代 FPS 式恢复，给玩家喘息。
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Vitals")
+	void TickRegen(float DeltaSeconds);
+
 	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Vitals")
 	bool IsDead() const;
 
@@ -66,4 +73,13 @@ private:
 	void Die();
 
 	int32 Health = 100;
+
+	/** 脱战回血参数：受伤后等多久开始回、每秒回多少。 */
+	static constexpr float RegenDelaySeconds = 5.f;
+	static constexpr float RegenPerSecond = 6.f;
+
+	/** 距上次受伤经过的秒数（≥ RegenDelaySeconds 才回血）。 */
+	float TimeSinceDamage = 999.f;
+	/** 回血的小数累加器（不足 1 点时攒着）。 */
+	float RegenAccumulator = 0.f;
 };

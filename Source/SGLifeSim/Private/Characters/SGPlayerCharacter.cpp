@@ -200,6 +200,16 @@ void ASGPlayerCharacter::Tick(float DeltaSeconds)
 	if (bClimbing) { TickClimb(); }
 	UpdateLocomotionAnimation();
 	UpdateFootsteps(DeltaSeconds);
+
+	// 脱战自动回血（B 块血量闭环）。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UPlayerVitalsSubsystem* Vitals = GI->GetSubsystem<UPlayerVitalsSubsystem>())
+		{
+			Vitals->TickRegen(DeltaSeconds);
+		}
+	}
+
 	DrawPrototypeHUD();
 
 	if (MinimapWidget)

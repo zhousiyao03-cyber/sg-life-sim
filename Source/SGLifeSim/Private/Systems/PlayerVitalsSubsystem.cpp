@@ -26,6 +26,7 @@ bool UPlayerVitalsSubsystem::IsDead() const
 void UPlayerVitalsSubsystem::ApplyDamage(int32 Damage)
 {
 	if (FPlayerVitalsSystem::IsDead(Health)) { return; } // 已死，等重生流程
+	if (Damage > 0) { TimeSinceDamage = 0.f; RegenAccumulator = 0.f; } // 受伤打断回血
 	Health = FPlayerVitalsSystem::ApplyDamage(Health, Damage);
 	OnHealthChanged.Broadcast(Health, FPlayerVitalsSystem::MaxHealth);
 
@@ -61,6 +62,24 @@ void UPlayerVitalsSubsystem::SetHealth(int32 NewHealth)
 {
 	Health = FPlayerVitalsSystem::Clamp(NewHealth);
 	OnHealthChanged.Broadcast(Health, FPlayerVitalsSystem::MaxHealth);
+}
+
+void UPlayerVitalsSubsystem::TickRegen(float DeltaSeconds)
+{
+	if (FPlayerVitalsSystem::IsDead(Health)) { return; }
+	if (Health >= FPlayerVitalsSystem::MaxHealth) { return; }
+
+	TimeSinceDamage += DeltaSeconds;
+	if (TimeSinceDamage < RegenDelaySeconds) { return; } // 还在「战斗中」，不回
+
+	RegenAccumulator += RegenPerSecond * DeltaSeconds;
+	if (RegenAccumulator >= 1.f)
+	{
+		const int32 Whole = (int32)RegenAccumulator;
+		RegenAccumulator -= Whole;
+		Health = FPlayerVitalsSystem::Heal(Health, Whole);
+		OnHealthChanged.Broadcast(Health, FPlayerVitalsSystem::MaxHealth);
+	}
 }
 
 void UPlayerVitalsSubsystem::Die()
