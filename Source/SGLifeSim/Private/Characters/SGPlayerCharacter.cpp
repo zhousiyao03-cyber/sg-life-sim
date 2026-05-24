@@ -13,11 +13,29 @@
 #include "InputActionValue.h"
 #include "Interactables/InteractableInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Systems/EconomySubsystem.h"
+#include "Systems/EconomyTypes.h"
+#include "Systems/PlayerStateSubsystem.h"
+#include "Systems/PlayerStatsTypes.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/RelationshipSubsystem.h"
+#include "Systems/RelationshipTypes.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
 #include "UI/SGHudWidget.h"
 #include "UI/SGLocationMenuWidget.h"
+
+namespace
+{
+	// 把「分」格式化成「$X.XX」。
+	FString FormatMoney(int64 Cents)
+	{
+		const TCHAR* Sign = (Cents < 0) ? TEXT("-") : TEXT("");
+		const int64 Abs = FMath::Abs(Cents);
+		return FString::Printf(TEXT("%s$%lld.%02lld"), Sign, Abs / 100, Abs % 100);
+	}
+}
 
 ASGPlayerCharacter::ASGPlayerCharacter()
 {
@@ -76,6 +94,16 @@ void ASGPlayerCharacter::BeginPlay()
 		if (HudWidget)
 		{
 			HudWidget->AddToViewport();
+		}
+	}
+
+	// 订阅成就解锁 → HUD toast。Director / Progress 在 GameInstance 层跨关卡保留，
+	// 玩家与 HUD 每次切关卡重建，这里每次 BeginPlay 重新绑定。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
+		{
+			Prog->OnAchievementUnlocked.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleAchievementUnlocked);
 		}
 	}
 
@@ -172,26 +200,59 @@ AActor* ASGPlayerCharacter::FindNearbyInteractable() const
 void ASGPlayerCharacter::TryInteract()
 {
 	AActor* Nearest = FindNearbyInteractable();
-	if (Nearest && Nearest->Implements<UInteractableInterface>())
+	if (!Nearest || !Nearest->Implements<UInteractableInterface>())
 	{
-		IInteractableInterface::Execute_OnInteract(Nearest, this);
+		return;
+	}
 
-		// 台词显示在 HUD 对话气泡上，5 秒后自动消失
-		if (HudWidget)
+	IInteractableInterface::Execute_OnInteract(Nearest, this);
+
+	const ASGInteractableNPC* Npc = Cast<ASGInteractableNPC>(Nearest);
+	if (!Npc)
+	{
+		return;
+	}
+
+	// 交互驱动系统：加好感 + 消耗能量（spec §5/§6）。
+	FText TierText;
+	UGameInstance* GI = GetGameInstance();
+	if (URelationshipSubsystem* Rel = GI ? GI->GetSubsystem<URelationshipSubsystem>() : nullptr)
+	{
+		Rel->AddAffinity(Npc->GetNpcId(), 5);
+		TierText = UEnum::GetDisplayValueAsText(Rel->GetTier(Npc->GetNpcId()));
+	}
+	if (UPlayerStateSubsystem* PS = GI ? GI->GetSubsystem<UPlayerStateSubsystem>() : nullptr)
+	{
+		PS->ModifyAttribute(EPlayerAttribute::Energy, -5);
+	}
+
+	// 台词 + 好感反馈显示在 HUD 对话气泡上，5 秒后自动消失。
+	if (HudWidget)
+	{
+		FText Bubble = Npc->GetDialogueDisplayText();
+		if (!TierText.IsEmpty())
 		{
-			if (const ASGInteractableNPC* Npc = Cast<ASGInteractableNPC>(Nearest))
-			{
-				HudWidget->SetDialogueText(Npc->GetDialogueDisplayText());
-				FTimerDelegate ClearDel = FTimerDelegate::CreateLambda([this]()
-				{
-					if (HudWidget)
-					{
-						HudWidget->SetDialogueText(FText::GetEmpty());
-					}
-				});
-				GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 5.f, /*bLoop=*/false);
-			}
+			Bubble = FText::FromString(FString::Printf(TEXT("%s\n（好感 +5 · 当前：%s）"),
+				*Bubble.ToString(), *TierText.ToString()));
 		}
+		HudWidget->SetDialogueText(Bubble);
+		FTimerDelegate ClearDel = FTimerDelegate::CreateLambda([this]()
+		{
+			if (HudWidget)
+			{
+				HudWidget->SetDialogueText(FText::GetEmpty());
+			}
+		});
+		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 5.f, /*bLoop=*/false);
+	}
+}
+
+void ASGPlayerCharacter::HandleAchievementUnlocked(FName AchievementId)
+{
+	if (HudWidget)
+	{
+		HudWidget->ShowAchievementToast(FText::FromString(
+			FString::Printf(TEXT("🏆 成就解锁：%s"), *AchievementId.ToString())));
 	}
 }
 
@@ -245,8 +306,27 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 		const FText BlockText = UEnum::GetDisplayValueAsText(TimeSys->GetCurrentBlock());
 		const FText WeekdayText = UEnum::GetDisplayValueAsText(TimeSys->GetWeekday());
 		HudWidget->SetStatusText(FText::FromString(FString::Printf(
-			TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 切换地点"),
+			TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 菜单"),
 			TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString())));
+	}
+
+	// 钱包行（现金 + 净资产）
+	if (UEconomySubsystem* Eco = GI ? GI->GetSubsystem<UEconomySubsystem>() : nullptr)
+	{
+		HudWidget->SetWalletText(FText::FromString(FString::Printf(
+			TEXT("现金 %s   ·   净资产 %s"),
+			*FormatMoney(Eco->GetBalance(ECurrencyAccount::Cash)),
+			*FormatMoney(Eco->GetNetWorth()))));
+	}
+
+	// 属性行（能量 / 心情 / 健康）
+	if (UPlayerStateSubsystem* PS = GI ? GI->GetSubsystem<UPlayerStateSubsystem>() : nullptr)
+	{
+		HudWidget->SetStatsText(FText::FromString(FString::Printf(
+			TEXT("能量 %d · 心情 %d · 健康 %d"),
+			PS->GetAttribute(EPlayerAttribute::Energy),
+			PS->GetAttribute(EPlayerAttribute::Mood),
+			PS->GetAttribute(EPlayerAttribute::Health))));
 	}
 
 	// 靠近可交互对象时显示其提示（如「[E] 对话」），否则隐藏

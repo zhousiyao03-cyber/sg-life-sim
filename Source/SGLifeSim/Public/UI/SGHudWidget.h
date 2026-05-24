@@ -23,11 +23,20 @@ public:
 	/** 顶部状态行：「Day X · 周几 · 时间块 + 操作提示」。 */
 	void SetStatusText(const FText& InText);
 
+	/** 钱包行（右上：现金 + 净资产）；传空则隐藏。 */
+	void SetWalletText(const FText& InText);
+
+	/** 属性行（左下：能量/心情/健康）；传空则隐藏。 */
+	void SetStatsText(const FText& InText);
+
 	/** 靠近可交互对象时的提示（如「[E] 对话」）；传空则隐藏。 */
 	void SetPromptText(const FText& InText);
 
 	/** 对话气泡（「Speaker：Line」）；传空则隐藏。 */
 	void SetDialogueText(const FText& InText);
+
+	/** 顶部居中弹一条成就解锁 toast，HoldSeconds 秒后自动消失。 */
+	void ShowAchievementToast(const FText& InText, float HoldSeconds = 4.f);
 
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -37,8 +46,20 @@ private:
 	TObjectPtr<UTextBlock> StatusText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> WalletText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> StatsText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> PromptText;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> DialogueText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> ToastText;
+
+	/** 成就 toast 自动消失计时器。 */
+	FTimerHandle ToastHideTimer;
 };

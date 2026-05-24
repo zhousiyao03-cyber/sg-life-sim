@@ -4,6 +4,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -50,6 +51,39 @@ TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 		}
 		StyleText(StatusText, 20, FLinearColor::White);
 
+		// 钱包行（右上）
+		WalletText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("WalletText"));
+		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(WalletText))
+		{
+			CanvasSlot->SetAnchors(FAnchors(1.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(1.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(-32.f, 24.f));
+			CanvasSlot->SetAutoSize(true);
+		}
+		StyleText(WalletText, 20, FLinearColor(0.7f, 1.f, 0.75f));
+
+		// 属性行（左上，状态行下方）
+		StatsText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("StatsText"));
+		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(StatsText))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(32.f, 54.f));
+			CanvasSlot->SetAutoSize(true);
+		}
+		StyleText(StatsText, 18, FLinearColor(0.85f, 0.9f, 1.f));
+
+		// 成就 toast（顶部居中）
+		ToastText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ToastText"));
+		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(ToastText))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.5f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.5f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(0.f, 84.f));
+			CanvasSlot->SetAutoSize(true);
+		}
+		StyleText(ToastText, 26, FLinearColor(1.f, 0.85f, 0.35f));
+
 		// 交互提示（底部居中，略高）
 		PromptText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PromptText"));
 		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(PromptText))
@@ -72,9 +106,10 @@ TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 		}
 		StyleText(DialogueText, 24, FLinearColor(1.f, 0.96f, 0.7f));
 
-		// 提示 / 对话初始隐藏
+		// 提示 / 对话 / toast 初始隐藏
 		PromptText->SetVisibility(ESlateVisibility::Collapsed);
 		DialogueText->SetVisibility(ESlateVisibility::Collapsed);
+		ToastText->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	return Super::RebuildWidget();
@@ -85,6 +120,56 @@ void USGHudWidget::SetStatusText(const FText& InText)
 	if (StatusText)
 	{
 		StatusText->SetText(InText);
+	}
+}
+
+namespace
+{
+	// 共用：传空则 Collapsed，否则设文本并显示（不挡点击）。
+	void ApplyOptionalText(UTextBlock* Text, const FText& InText)
+	{
+		if (!Text)
+		{
+			return;
+		}
+		const bool bEmpty = InText.IsEmpty();
+		Text->SetVisibility(bEmpty ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+		if (!bEmpty)
+		{
+			Text->SetText(InText);
+		}
+	}
+}
+
+void USGHudWidget::SetWalletText(const FText& InText)
+{
+	ApplyOptionalText(WalletText, InText);
+}
+
+void USGHudWidget::SetStatsText(const FText& InText)
+{
+	ApplyOptionalText(StatsText, InText);
+}
+
+void USGHudWidget::ShowAchievementToast(const FText& InText, float HoldSeconds)
+{
+	if (!ToastText)
+	{
+		return;
+	}
+	ToastText->SetText(InText);
+	ToastText->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	if (UWorld* World = GetWorld())
+	{
+		FTimerDelegate HideDel = FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (ToastText)
+			{
+				ToastText->SetVisibility(ESlateVisibility::Collapsed);
+			}
+		});
+		World->GetTimerManager().SetTimer(ToastHideTimer, HideDel, FMath::Max(0.5f, HoldSeconds), false);
 	}
 }
 

@@ -81,8 +81,12 @@ private:
 	/** IA_OpenLocationMenu（M）：在出租屋 / 食阁两个关卡间切换。原型用直接跳转代替菜单 UMG。 */
 	void SwitchLocation();
 
-	/** 每帧刷新 HUD widget 的状态行 + 交互提示。 */
+	/** 每帧刷新 HUD widget 的状态行 + 交互提示 + 钱包 / 属性。 */
 	void DrawPrototypeHUD();
+
+	/** 绑定到 UProgressSubsystem::OnAchievementUnlocked，弹 HUD toast。 */
+	UFUNCTION()
+	void HandleAchievementUnlocked(FName AchievementId);
 
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
