@@ -15,6 +15,8 @@ public class SGLifeSim : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
+			"NavigationSystem", // NPC 寻路（绕开建筑，不穿墙）
+			"AIModule",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

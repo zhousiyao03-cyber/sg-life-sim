@@ -21,7 +21,8 @@ enum class EStreetNpcKind : uint8
  *  - 警察：玩家通缉星 >0 时朝玩家移动追捕，靠近就「逮捕」（清通缉）。
  *  - 帮派：见玩家就敌对靠近（占位行为同警察追，但不清通缉）。
  *
- * 全占位逻辑/AI，无寻路（直线朝目标）。受击/死亡动画待美术。
+ * 追捕用 UE 导航系统寻路（FindPathToLocationSynchronously）绕开建筑，沿路径点走，
+ * 不再直线穿墙。无 NavMesh 时回退直线（保底）。受击/死亡动画待美术。
  */
 UCLASS()
 class SGLIFESIM_API ASGStreetNPC : public AActor
@@ -57,8 +58,18 @@ private:
 	/** 找玩家 Pawn（追捕用）。 */
 	AActor* FindPlayer() const;
 
+	/** 朝目标走一步：优先沿 NavMesh 路径折线，无导航则回退直线。 */
+	void ChaseTowards(const FVector& TargetLocation, float DeltaSeconds);
+
 	EStreetNpcKind Kind = EStreetNpcKind::Pedestrian;
 	int32 Health = 100;
 	bool bDead = false;
 	float ChaseSpeed = 280.f; // cm/s
+
+	/** 当前缓存的寻路折线（世界坐标点）。 */
+	TArray<FVector> PathPoints;
+	/** 当前正前往 PathPoints 的哪个点。 */
+	int32 PathIndex = 0;
+	/** 距下次重算路径还剩多久（秒），目标在移动所以要周期性刷新。 */
+	float RepathCooldown = 0.f;
 };

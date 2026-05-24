@@ -7,6 +7,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
+#include "NavigationSystem.h"
+#include "NavigationPath.h"
 
 ASGStreetNPC::ASGStreetNPC()
 {
@@ -116,11 +118,60 @@ void ASGStreetNPC::Tick(float DeltaSeconds)
 		{
 			W->ClearWanted();
 		}
+		PathPoints.Reset();
 		return;
 	}
 
-	// 直线朝玩家走（无寻路，占位）。
-	FVector Dir = ToP; Dir.Z = 0.f; Dir = Dir.GetSafeNormal();
+	// 沿 NavMesh 寻路绕开建筑朝玩家走。
+	ChaseTowards(Player->GetActorLocation(), DeltaSeconds);
+}
+
+void ASGStreetNPC::ChaseTowards(const FVector& TargetLocation, float DeltaSeconds)
+{
+	// 目标在动，周期性重算路径（每 0.4s，或路径已走完）。
+	RepathCooldown -= DeltaSeconds;
+	const bool bNeedRepath = (RepathCooldown <= 0.f) || !PathPoints.IsValidIndex(PathIndex);
+	if (bNeedRepath)
+	{
+		RepathCooldown = 0.4f;
+		PathPoints.Reset();
+		PathIndex = 0;
+
+		if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			if (UNavigationPath* NavPath = Nav->FindPathToLocationSynchronously(GetWorld(), GetActorLocation(), TargetLocation))
+			{
+				if (NavPath->IsValid() && NavPath->PathPoints.Num() > 1)
+				{
+					PathPoints = NavPath->PathPoints;
+					// 跳过起点（就是自己当前位置），从下一个拐点开始走。
+					PathIndex = 1;
+				}
+			}
+		}
+	}
+
+	// 选当前要去的路径点；无有效路径则回退直线朝目标（保底不卡死）。
+	FVector NextPoint = TargetLocation;
+	if (PathPoints.IsValidIndex(PathIndex))
+	{
+		NextPoint = PathPoints[PathIndex];
+		// 到达当前拐点就推进到下一个。
+		if (FVector::DistSquared2D(GetActorLocation(), NextPoint) < FMath::Square(60.f))
+		{
+			++PathIndex;
+			if (PathPoints.IsValidIndex(PathIndex))
+			{
+				NextPoint = PathPoints[PathIndex];
+			}
+		}
+	}
+
+	FVector Dir = NextPoint - GetActorLocation();
+	Dir.Z = 0.f;
+	Dir = Dir.GetSafeNormal();
+	if (Dir.IsNearlyZero()) { return; }
+
 	AddActorWorldOffset(Dir * ChaseSpeed * DeltaSeconds, /*bSweep=*/true);
 	SetActorRotation(Dir.Rotation());
 }
