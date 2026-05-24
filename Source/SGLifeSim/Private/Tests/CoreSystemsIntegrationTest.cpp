@@ -11,6 +11,7 @@
 #include "Systems/SaveGameSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/SGAchievementIds.h"
+#include "Systems/EconomicEventSubsystem.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -45,6 +46,12 @@ bool FCoreSystemsIntegrationTest::RunTest(const FString& Parameters)
 	TestNotNull(TEXT("PlayerStateSubsystem"), PS);
 	TestNotNull(TEXT("SaveGameSubsystem"), Save);
 	if (!Time || !Eco || !Prog || !PS || !Save) { GI->Shutdown(); return false; }
+
+	// 关掉随机经济事件 —— 本测断言精确的月结现金，事件会引入非确定性。
+	if (UEconomicEventSubsystem* Events = GI->GetSubsystem<UEconomicEventSubsystem>())
+	{
+		Events->SetEventsEnabled(false);
+	}
 
 	// 起点：现金为 0，第 1 月。
 	TestEqual(TEXT("cash starts 0"), Eco->GetBalance(ECurrencyAccount::Cash), (int64)0);

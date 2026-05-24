@@ -20,6 +20,9 @@ namespace SGAchievementIds
 	/** 第一次升职。 */
 	inline FName FirstPromotion() { return FName(TEXT("FirstPromotion")); }
 
+	/** 听完邻居 Ah Hua 当年打拼的故事。 */
+	inline FName KnowNeighborStory() { return FName(TEXT("KnowNeighborStory")); }
+
 	/** 净资产达成阈值（分）：$10,000。 */
 	inline constexpr int64 NetWorth10kThresholdCents = 1000000;
 }

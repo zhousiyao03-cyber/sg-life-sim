@@ -11,6 +11,7 @@
 #include "Systems/ProgressSubsystem.h"
 #include "Systems/SGAchievementIds.h"
 #include "Systems/SaveGameSubsystem.h"
+#include "Systems/EconomicEventSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -40,6 +41,12 @@ bool FCareerPromotionRaisesIncomeTest::RunTest(const FString& Parameters)
 	UProgressSubsystem*    Prog   = GI->GetSubsystem<UProgressSubsystem>();
 	USaveGameSubsystem*    Save   = GI->GetSubsystem<USaveGameSubsystem>();
 	if (!Career || !Eco || !Time || !PS || !Prog || !Save) { GI->Shutdown(); return false; }
+
+	// 关随机经济事件 —— 本测断言精确的月度到手现金，事件会引入非确定性。
+	if (UEconomicEventSubsystem* Events = GI->GetSubsystem<UEconomicEventSubsystem>())
+	{
+		Events->SetEventsEnabled(false);
+	}
 
 	// 起步：初级工程师，薪资已推给 Economy（$5000）。
 	TestEqual(TEXT("starts Junior"), Career->GetLevel(), ECareerLevel::Junior);

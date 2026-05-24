@@ -43,7 +43,10 @@ void UEconomicEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayN
 	while (CurrentMonth > LastRolledMonth)
 	{
 		++LastRolledMonth;
-		ApplyEvent(FEconomicEventSystem::PickEvent(Stream));
+		if (bEnabled)
+		{
+			ApplyEvent(FEconomicEventSystem::PickEvent(Stream));
+		}
 	}
 }
 

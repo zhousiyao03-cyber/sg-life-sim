@@ -38,6 +38,13 @@ public:
 	/** 强制结束。 */
 	void End() { bActive = false; }
 
+	/**
+	 * 静态校验一棵对话树的完整性（内容作者防呆）：
+	 * 根节点必须存在；每个选项若指定了 NextNodeId（非空且不是 EndDialogue 效果），
+	 * 该目标节点必须存在于树中。合法返回 true，否则 OutError 填首个问题。
+	 */
+	static bool ValidateTree(const FDialogueTree& InTree, FString& OutError);
+
 private:
 	const FDialogueNode* FindNode(FName NodeId) const;
 	static bool IsChoiceAvailable(const FDialogueChoice& Choice, FConditionEvaluator Evaluator);

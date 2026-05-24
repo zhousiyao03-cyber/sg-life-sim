@@ -31,8 +31,8 @@ bool FDialogueIntegrationTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("start AhHua dialogue"), Dlg->StartDialogue(TEXT("AhHua")));
 	TestTrue(TEXT("dialogue active"), Dlg->IsDialogueActive());
 
-	// 初始好感 0 → 只有「闲聊」「送礼」可见，「交心」(需50) 被门控
-	TestEqual(TEXT("2 visible choices at affinity 0"), Dlg->GetChoiceTexts().Num(), 2);
+	// 初始好感 0 → 可见「闲聊」「送礼」「先走了」(都无条件)；「交心」(需50)/「问当年」(需70)/「报喜PR」(需身份) 被门控
+	TestEqual(TEXT("3 visible choices at affinity 0"), Dlg->GetChoiceTexts().Num(), 3);
 
 	// 选「送礼」(visible index 1) → 好感 +10
 	TestTrue(TEXT("choose gift"), Dlg->ChooseOption(1));
@@ -44,10 +44,10 @@ bool FDialogueIntegrationTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("choose bye"), Dlg->ChooseOption(0));
 	TestFalse(TEXT("dialogue ended"), Dlg->IsDialogueActive());
 
-	// 手动把好感拉到 50，再开对话 → 「交心」分支应解锁（3 个可见选项）
+	// 手动把好感拉到 50，再开对话 → 「交心」分支应解锁（闲聊/送礼/交心/先走了 = 4 个可见）
 	Rel->AddAffinity(TEXT("AhHua"), 40);  // 10 + 40 = 50
 	TestTrue(TEXT("restart dialogue"), Dlg->StartDialogue(TEXT("AhHua")));
-	TestEqual(TEXT("3 visible choices at affinity 50"), Dlg->GetChoiceTexts().Num(), 3);
+	TestEqual(TEXT("4 visible choices at affinity 50"), Dlg->GetChoiceTexts().Num(), 4);
 
 	GI->Shutdown();
 	return true;

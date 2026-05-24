@@ -51,6 +51,46 @@ TArray<int32> FDialogueSystem::GetAvailableChoiceIndices(FConditionEvaluator Eva
 	return Out;
 }
 
+bool FDialogueSystem::ValidateTree(const FDialogueTree& InTree, FString& OutError)
+{
+	auto HasNode = [&InTree](FName NodeId)
+	{
+		for (const FDialogueNode& N : InTree.Nodes)
+		{
+			if (N.NodeId == NodeId) { return true; }
+		}
+		return false;
+	};
+
+	if (!HasNode(InTree.RootNodeId))
+	{
+		OutError = FString::Printf(TEXT("树 '%s' 的根节点 '%s' 不存在"),
+			*InTree.TreeId.ToString(), *InTree.RootNodeId.ToString());
+		return false;
+	}
+
+	for (const FDialogueNode& Node : InTree.Nodes)
+	{
+		for (const FDialogueChoice& Choice : Node.Choices)
+		{
+			// 选项要么结束（EndDialogue 效果 / 空 NextNodeId），要么跳到一个存在的节点。
+			if (Choice.Effect.Type == EDialogueEffectType::EndDialogue || Choice.NextNodeId.IsNone())
+			{
+				continue;
+			}
+			if (!HasNode(Choice.NextNodeId))
+			{
+				OutError = FString::Printf(TEXT("树 '%s' 节点 '%s' 的选项指向不存在的节点 '%s'"),
+					*InTree.TreeId.ToString(), *Node.NodeId.ToString(), *Choice.NextNodeId.ToString());
+				return false;
+			}
+		}
+	}
+
+	OutError.Empty();
+	return true;
+}
+
 bool FDialogueSystem::TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator, FDialogueEffect& OutEffect)
 {
 	const FDialogueNode* Node = GetCurrentNode();

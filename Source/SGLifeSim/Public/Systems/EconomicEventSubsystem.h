@@ -31,6 +31,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Events")
 	void SetSeed(int32 Seed) { Stream.Initialize(Seed); }
 
+	/** 开关月度随机事件。关掉后跨月不抽事件（供需要确定性经济的测试用）。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Events")
+	void SetEventsEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+
 	/** 应用一个指定事件的效果（月度抽取与脚本/测试共用）。非平静返回 true 并广播。 */
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Events")
 	bool ApplyEvent(EEconomicEvent Event);
@@ -49,6 +53,9 @@ private:
 
 	/** 上次抽取的月号，检测跨月。 */
 	int32 LastRolledMonth = 1;
+
+	/** 是否启用月度随机事件（默认开；测试可关以保证确定性）。 */
+	bool bEnabled = true;
 
 	UFUNCTION()
 	void HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNumber);
