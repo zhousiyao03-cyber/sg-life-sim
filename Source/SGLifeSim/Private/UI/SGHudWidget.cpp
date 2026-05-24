@@ -51,24 +51,24 @@ TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 		}
 		StyleText(StatusText, 20, FLinearColor::White);
 
-		// 钱包行（右上）
+		// 钱包行（左列，状态行下方）
 		WalletText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("WalletText"));
 		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(WalletText))
 		{
-			CanvasSlot->SetAnchors(FAnchors(1.f, 0.f));
-			CanvasSlot->SetAlignment(FVector2D(1.f, 0.f));
-			CanvasSlot->SetPosition(FVector2D(-32.f, 24.f));
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(32.f, 56.f));
 			CanvasSlot->SetAutoSize(true);
 		}
 		StyleText(WalletText, 20, FLinearColor(0.7f, 1.f, 0.75f));
 
-		// 属性行（左上，状态行下方）
+		// 属性行（左列，钱包行下方）
 		StatsText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("StatsText"));
 		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(StatsText))
 		{
 			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
 			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
-			CanvasSlot->SetPosition(FVector2D(32.f, 54.f));
+			CanvasSlot->SetPosition(FVector2D(32.f, 86.f));
 			CanvasSlot->SetAutoSize(true);
 		}
 		StyleText(StatsText, 18, FLinearColor(0.85f, 0.9f, 1.f));
