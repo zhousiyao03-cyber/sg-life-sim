@@ -5,6 +5,7 @@
 #include "Systems/EconomyTypes.h"
 #include "Systems/ResidencyTypes.h"
 #include "Systems/AssetsTypes.h"
+#include "Systems/CareerTypes.h"
 #include "Systems/EndingTypes.h"
 #include "SGSaveGame.generated.h"
 
@@ -78,6 +79,16 @@ public:
 
 	UPROPERTY()
 	int64 MortgageMonthlyPrincipalCents = 0;
+
+	// --- Career（Plan 8） ---
+	UPROPERTY()
+	ECareerLevel CareerLevel = ECareerLevel::Junior;
+
+	UPROPERTY()
+	int64 CareerGrossSalaryCents = 500000;
+
+	UPROPERTY()
+	int32 CareerMonthsInRole = 0;
 
 	// --- Ending ---
 	UPROPERTY()

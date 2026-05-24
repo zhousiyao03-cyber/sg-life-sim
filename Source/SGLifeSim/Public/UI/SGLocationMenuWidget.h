@@ -49,6 +49,14 @@ protected:
 	UFUNCTION()
 	void OnPrepayMortgageClicked();
 
+	/** 申请升职。 */
+	UFUNCTION()
+	void OnPromoteClicked();
+
+	/** 跳槽（+35%）。 */
+	UFUNCTION()
+	void OnJobHopClicked();
+
 	UFUNCTION()
 	void OnCloseClicked();
 
@@ -76,6 +84,12 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> PrepayButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> PromoteButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> JobHopButton;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> CloseButton;

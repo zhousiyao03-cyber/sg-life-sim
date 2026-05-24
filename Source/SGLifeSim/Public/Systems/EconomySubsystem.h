@@ -46,6 +46,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Economy")
 	void ApplyMonthlySalary(int64 GrossCents);
 
+	/** 设置月度结算用的税前月薪（分）。由 UCareerSubsystem 在薪资变化时推入。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Economy")
+	void SetMonthlyGrossSalary(int64 GrossCents) { MonthlyFinance.SalaryGrossCents = FMath::Max((int64)0, GrossCents); }
+
+	/** 当前月度结算用的税前月薪（分）。 */
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Economy")
+	int64 GetMonthlyGrossSalary() const { return MonthlyFinance.SalaryGrossCents; }
+
 	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Economy")
 	int64 GetNetWorth() const;
 

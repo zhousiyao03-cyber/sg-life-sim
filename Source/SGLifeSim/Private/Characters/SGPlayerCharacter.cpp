@@ -23,6 +23,8 @@
 #include "Systems/RelationshipTypes.h"
 #include "Systems/ResidencySubsystem.h"
 #include "Systems/AssetsSubsystem.h"
+#include "Systems/CareerSubsystem.h"
+#include "Systems/CareerTypes.h"
 #include "Systems/EndingSubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -337,14 +339,22 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 		HudWidget->SetWalletText(FText::FromString(Wallet));
 	}
 
-	// 属性行（能量 / 心情 / 健康）
+	// 属性行（职位 + 月薪 · 能量 / 心情 / 健康）
 	if (UPlayerStateSubsystem* PS = GI ? GI->GetSubsystem<UPlayerStateSubsystem>() : nullptr)
 	{
-		HudWidget->SetStatsText(FText::FromString(FString::Printf(
-			TEXT("能量 %d · 心情 %d · 健康 %d"),
+		FString Stats;
+		if (UCareerSubsystem* Career = GI ? GI->GetSubsystem<UCareerSubsystem>() : nullptr)
+		{
+			Stats = FString::Printf(TEXT("%s（月薪 %s）   ·   "),
+				*UEnum::GetDisplayValueAsText(Career->GetLevel()).ToString(),
+				*FormatMoney(Career->GetGrossSalaryCents()));
+		}
+		Stats += FString::Printf(TEXT("能量 %d · 心情 %d · 健康 %d · 专业 %d"),
 			PS->GetAttribute(EPlayerAttribute::Energy),
 			PS->GetAttribute(EPlayerAttribute::Mood),
-			PS->GetAttribute(EPlayerAttribute::Health))));
+			PS->GetAttribute(EPlayerAttribute::Health),
+			PS->GetAttribute(EPlayerAttribute::Professional));
+		HudWidget->SetStatsText(FText::FromString(Stats));
 	}
 
 	// 进阶行（身份 · 房产 · 终局倾向）

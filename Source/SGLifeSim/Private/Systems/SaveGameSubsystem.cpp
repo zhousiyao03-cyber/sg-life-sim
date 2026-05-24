@@ -7,6 +7,7 @@
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/ResidencySubsystem.h"
 #include "Systems/AssetsSubsystem.h"
+#include "Systems/CareerSubsystem.h"
 #include "Systems/EndingSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -56,6 +57,12 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 		Save.MortgageAnnualRatePerMille = M.AnnualRatePerMille;
 		Save.MortgageMonthlyPrincipalCents = M.MonthlyPrincipalCents;
 	}
+	if (const UCareerSubsystem* Career = GI->GetSubsystem<UCareerSubsystem>())
+	{
+		Save.CareerLevel = Career->GetLevel();
+		Save.CareerGrossSalaryCents = Career->GetGrossSalaryCents();
+		Save.CareerMonthsInRole = Career->GetMonthsInRole();
+	}
 	if (const UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
 	{
 		Save.ChosenEnding = End->GetChosenEnding();
@@ -99,6 +106,11 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	{
 		Assets->GetAssets().RestoreState(Save.HousingTier, Save.VehicleTier, Save.InvestmentCents,
 			Save.MortgageOutstandingCents, Save.MortgageAnnualRatePerMille, Save.MortgageMonthlyPrincipalCents);
+	}
+	if (UCareerSubsystem* Career = GI->GetSubsystem<UCareerSubsystem>())
+	{
+		Career->GetCareer().RestoreState(Save.CareerLevel, Save.CareerGrossSalaryCents, Save.CareerMonthsInRole);
+		Career->SyncSalaryToEconomy(); // 读档后把薪资重新推给 Economy
 	}
 	if (UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
 	{

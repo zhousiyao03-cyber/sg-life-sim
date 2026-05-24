@@ -29,6 +29,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 | 系统 | 核心类 / 子系统 | 要点 |
 |------|----------------|------|
 | 经济 | `FEconomySystem` / `UEconomySubsystem` | 现金/银行/CPF(OA/SA/MA) 钱包，金额以「分」存；月薪按 CPF 规则分账 |
+| 职业 | `FCareerSystem` / `UCareerSubsystem` | 程序员升迁阶梯（初级→首席）：专业技能+在职时长可升职涨薪，或跳槽 +35%；薪资喂给月度发薪 |
 | 时间 | `FTimeSystem` / `UTimeSubsystem` | 时间块/天/周/月推进；每月 1 号经事件自动发薪 + 扣房租水电交通 |
 | 进度 | `FProgressSystem` / `UProgressSubsystem` | 软成就去重追踪 + 首解锁委托 |
 | 关系 | `FRelationshipSystem` / `URelationshipSubsystem` | NPC 好感 0~100 + 六档关系等级（陌生→恋人） |
@@ -40,9 +41,9 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 | 对话 | `FDialogueSystem` / `UDialogueSubsystem` + `USGDialogueWidget` | 数据驱动对话树：选项条件门控（好感/身份/成就）+ 效果（好感/钱/成就）；按 E 弹纯 C++ UMG 对话面板 |
 | 存档 | `USGSaveGame` / `USaveGameSubsystem` | 聚合全部系统状态，`SaveGameToSlot`/`LoadGameFromSlot` |
 
-玩家操作已接入系统（Plan 3/4/6）：按 E 与 NPC 开对话面板（选项门控/施加好感等效果）+ 耗能量、推时间触发月度发薪/账单/投资回报、HUD 实时显示钱包/属性/身份/住房/终局倾向、菜单可存读档。
+玩家操作已接入系统（Plan 3/4/6/7/8）：按 E 与 NPC 开对话面板（选项门控/施加好感等效果）+ 耗能量、推时间触发月度发薪/账单/投资回报/房贷月供、HUD 实时显示职位月薪/钱包/属性/身份/住房/房贷/终局倾向、菜单可存读档 + 按揭买房/还贷 + 升职/跳槽。
 
-跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **48 个全绿**。
+跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **53 个全绿**。
 
 ## 类型
 
@@ -55,7 +56,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 ## 文档
 
 - 设计文档（spec）：[docs/specs/2026-05-23-sg-life-sim-design.md](docs/specs/2026-05-23-sg-life-sim-design.md)
-- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）
+- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）
 - 决策记录：[docs/decisions/](docs/decisions/)
 
 ## 技术栈

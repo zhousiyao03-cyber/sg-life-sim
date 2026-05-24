@@ -13,6 +13,7 @@
 #include "Engine/GameInstance.h"
 #include "Systems/AssetsSubsystem.h"
 #include "Systems/AssetsTypes.h"
+#include "Systems/CareerSubsystem.h"
 #include "Systems/SaveGameSubsystem.h"
 
 namespace
@@ -121,6 +122,22 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		PrepayButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnPrepayMortgageClicked);
+
+		PromoteButton = MakeButton(WidgetTree, TEXT("申请升职"), TEXT("PromoteButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(PromoteButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 14.f, 0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		PromoteButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnPromoteClicked);
+
+		JobHopButton = MakeButton(WidgetTree, TEXT("跳槽（+35%）"), TEXT("JobHopButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(JobHopButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		JobHopButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnJobHopClicked);
 
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
@@ -271,6 +288,48 @@ void USGLocationMenuWidget::OnPrepayMortgageClicked()
 				}
 				const bool bOk = Assets->PrepayMortgage();
 				SetStatus(bOk ? TEXT("已结清房贷 ✓") : TEXT("现金不够结清"));
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("操作失败"));
+}
+
+void USGLocationMenuWidget::OnPromoteClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (UCareerSubsystem* Career = GI->GetSubsystem<UCareerSubsystem>())
+			{
+				const bool bOk = Career->TryPromote();
+				if (bOk)
+				{
+					SetStatus(FString::Printf(TEXT("升职成功 → %s ✓"),
+						*UEnum::GetDisplayValueAsText(Career->GetLevel()).ToString()));
+				}
+				else
+				{
+					SetStatus(TEXT("暂不够格（需更高专业技能 / 在职满 3 月）"));
+				}
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("操作失败"));
+}
+
+void USGLocationMenuWidget::OnJobHopClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (UCareerSubsystem* Career = GI->GetSubsystem<UCareerSubsystem>())
+			{
+				const bool bOk = Career->JobHop();
+				SetStatus(bOk ? TEXT("跳槽成功，薪资 +35% ✓") : TEXT("待业中，无处可跳"));
 				return;
 			}
 		}

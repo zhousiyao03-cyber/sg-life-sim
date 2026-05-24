@@ -17,6 +17,9 @@ namespace SGAchievementIds
 	/** 任一 NPC 好感首次达到「朋友」档。 */
 	inline FName FirstFriend() { return FName(TEXT("FirstFriend")); }
 
+	/** 第一次升职。 */
+	inline FName FirstPromotion() { return FName(TEXT("FirstPromotion")); }
+
 	/** 净资产达成阈值（分）：$10,000。 */
 	inline constexpr int64 NetWorth10kThresholdCents = 1000000;
 }
