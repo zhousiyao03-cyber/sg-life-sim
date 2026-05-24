@@ -66,8 +66,26 @@ protected:
 	float WalkSpeedThreshold = 10.f;
 
 private:
-	/** IA_Move 的 Triggered 回调：把 2D 输入映射到世界 X/Y 平面移动。 */
+	/** IA_Move 的 Triggered 回调：把 2D 输入映射到世界 X/Y 平面移动。攀爬态改为沿墙面移动。 */
 	void Move(const FInputActionValue& Value);
+
+	/** 攀爬键（C）：贴墙时切入/退出攀爬模式。 */
+	void ToggleClimb();
+
+	/** 进入攀爬：前方有墙才成立。关重力、贴墙。 */
+	void StartClimb();
+
+	/** 退出攀爬：恢复 Walking。 */
+	void StopClimb();
+
+	/** 每帧：攀爬态下检测是否还贴着墙、是否爬到顶（翻越/掉落）。 */
+	void TickClimb();
+
+	/** 是否正在攀爬。 */
+	bool bClimbing = false;
+
+	/** 攀爬贴附的墙面法线（指向玩家），用于贴墙和沿墙移动。 */
+	FVector ClimbWallNormal = FVector::ZeroVector;
 
 	/** 按当前水平速度在 Idle / Walk 间切换单节点播放，避免每帧重复 Play。 */
 	void UpdateLocomotionAnimation();

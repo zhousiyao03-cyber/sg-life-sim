@@ -174,6 +174,7 @@ void ASGPlayerCharacter::BeginPlay()
 void ASGPlayerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (bClimbing) { TickClimb(); }
 	UpdateLocomotionAnimation();
 	DrawPrototypeHUD();
 
@@ -242,6 +243,9 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		// 重力/落地由 CharacterMovement 处理，无需额外代码。
 		PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
 		PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
+
+		// 攀爬：legacy 动作 Climb（C）→ 贴墙时切入/退出攀爬模式。
+		PlayerInputComponent->BindAction(TEXT("Climb"), IE_Pressed, this, &ASGPlayerCharacter::ToggleClimb);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
@@ -565,10 +569,96 @@ void ASGPlayerCharacter::Move(const FInputActionValue& Value)
 		return;
 	}
 
+	// 攀爬态：沿墙面移动。Axis.Y → 沿墙向上/下（世界 Z），Axis.X → 沿墙横向。
+	if (bClimbing)
+	{
+		const FVector Up = FVector::UpVector;
+		// 墙面横向 = 墙法线 × 世界上方
+		const FVector WallRight = FVector::CrossProduct(ClimbWallNormal, Up).GetSafeNormal();
+		AddMovementInput(Up, Axis.Y);
+		AddMovementInput(WallRight, Axis.X);
+		return;
+	}
+
 	// 第一人称：相对控制器（视线）水平朝向移动。Axis.Y 前后，Axis.X 左右。
 	const FRotator YawRotation(0.f, Ctrl->GetControlRotation().Yaw, 0.f);
 	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 	AddMovementInput(Forward, Axis.Y);
 	AddMovementInput(Right, Axis.X);
+}
+
+void ASGPlayerCharacter::ToggleClimb()
+{
+	if (bClimbing) { StopClimb(); }
+	else           { StartClimb(); }
+}
+
+void ASGPlayerCharacter::StartClimb()
+{
+	// 朝视线前方射线，够近且打到接近竖直的面（墙）才允许攀爬。
+	const AController* Ctrl = GetController();
+	if (!Ctrl) { return; }
+
+	const FVector Start = GetActorLocation();
+	const FVector Forward = Ctrl->GetControlRotation().Vector();
+	const FVector End = Start + Forward * 100.f; // 1m 内有墙才贴
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	if (!GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		return; // 前方无墙
+	}
+	// 墙面近竖直：法线水平分量大（|normal.Z| 小）
+	if (FMath::Abs(Hit.Normal.Z) > 0.5f)
+	{
+		return; // 是地面/斜坡，不是墙
+	}
+
+	ClimbWallNormal = Hit.Normal;
+	bClimbing = true;
+
+	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+	{
+		Move->SetMovementMode(MOVE_Flying); // 关重力，能沿墙上下
+		Move->StopMovementImmediately();
+	}
+}
+
+void ASGPlayerCharacter::StopClimb()
+{
+	bClimbing = false;
+	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+	{
+		Move->SetMovementMode(MOVE_Falling); // 松手→下落，落地自动转 Walking
+	}
+}
+
+void ASGPlayerCharacter::TickClimb()
+{
+	// 每帧确认还贴着墙：朝墙法线反方向探，丢了墙（爬到顶/侧边离开）就退出攀爬。
+	const FVector Start = GetActorLocation();
+	const FVector End = Start - ClimbWallNormal * 120.f; // 朝墙探 1.2m
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	const bool bStillWall = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params)
+		&& FMath::Abs(Hit.Normal.Z) <= 0.5f;
+
+	if (!bStillWall)
+	{
+		// 爬过墙顶：给个向前的小推力翻越上去，再退出攀爬。
+		if (UCharacterMovementComponent* Move = GetCharacterMovement())
+		{
+			Move->Launch(-ClimbWallNormal * 200.f + FVector(0, 0, 300.f)); // 朝墙内+上方翻越
+		}
+		StopClimb();
+		return;
+	}
+
+	// 贴墙：把自己吸附到离墙固定距离，避免飘离。
+	const FVector Desired = Hit.ImpactPoint + ClimbWallNormal * 45.f; // 距墙 45cm
+	SetActorLocation(FVector(Desired.X, Desired.Y, Start.Z), /*bSweep=*/false);
 }
