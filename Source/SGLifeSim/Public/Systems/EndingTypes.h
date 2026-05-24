@@ -14,4 +14,5 @@ enum class EEnding : uint8
 	CashOut     UMETA(DisplayName = "兑现离开"),   // 攒够钱主动回国
 	Heartbreak  UMETA(DisplayName = "心碎离开"),   // 续签失败 / 破产 / 关系破裂
 	Adrift      UMETA(DisplayName = "留下但漂着"), // 没 PR、租房、关系薄
+	Breakdown   UMETA(DisplayName = "被压垮"),     // 理智耗尽 / 精神崩溃（恐怖坏结局）
 };

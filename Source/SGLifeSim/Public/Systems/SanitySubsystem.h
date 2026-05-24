@@ -60,6 +60,9 @@ private:
 	/** 最近一次每日恢复所在天，保证每天只恢复一次。 */
 	int32 LastRecoveredDay = -1;
 
+	/** 理智已归零、已触发「被压垮」结局，避免重复触发。 */
+	bool bBrokenDown = false;
+
 	/** 每日恢复量（鬼月除外）。 */
 	static constexpr int32 DailyRecovery = 8;
 };

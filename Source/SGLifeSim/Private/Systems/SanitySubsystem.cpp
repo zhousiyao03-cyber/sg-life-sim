@@ -2,6 +2,8 @@
 #include "Systems/SanitySystem.h"
 #include "Systems/HorrorEventSystem.h" // IsGhostMonth
 #include "Systems/TimeSubsystem.h"
+#include "Systems/EndingSubsystem.h"
+#include "Systems/EndingTypes.h"
 
 void USanitySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -50,6 +52,19 @@ void USanitySubsystem::SetSanity(int32 NewValue)
 	if (NewState != OldState)
 	{
 		OnSanityChanged.Broadcast(Sanity, NewState);
+	}
+
+	// 理智归零 → 强制「被压垮」结局（恐怖坏结局），只触发一次。
+	if (Sanity <= 0 && !bBrokenDown)
+	{
+		bBrokenDown = true;
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
+			{
+				End->ChooseEnding(EEnding::Breakdown);
+			}
+		}
 	}
 }
 

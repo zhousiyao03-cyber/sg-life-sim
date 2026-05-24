@@ -4,6 +4,7 @@
 #include "Systems/AssetsSubsystem.h"
 #include "Systems/RelationshipSubsystem.h"
 #include "Systems/EconomySubsystem.h"
+#include "Systems/SanitySubsystem.h"
 
 int64 UEndingSubsystem::ComputeTotalNetWorth() const
 {
@@ -57,8 +58,14 @@ EEnding UEndingSubsystem::GetCurrentLeaning() const
 		bOwnsHome = Assets->OwnsHome();
 	}
 
+	int32 Sanity = 100;
+	if (const USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
+	{
+		Sanity = San->GetSanity();
+	}
+
 	return FEndingEvaluator::EvaluateLeaning(
-		Status, bOwnsHome, ComputeMaxAffinity(), ComputeTotalNetWorth(), PRRejections);
+		Status, bOwnsHome, ComputeMaxAffinity(), ComputeTotalNetWorth(), PRRejections, Sanity);
 }
 
 void UEndingSubsystem::ChooseEnding(EEnding Ending)

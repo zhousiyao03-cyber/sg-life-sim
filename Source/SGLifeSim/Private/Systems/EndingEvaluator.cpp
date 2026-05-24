@@ -5,8 +5,15 @@ EEnding FEndingEvaluator::EvaluateLeaning(
 	bool bOwnsHome,
 	int32 MaxAffinity,
 	int64 NetWorthCents,
-	int32 PRRejections)
+	int32 PRRejections,
+	int32 Sanity)
 {
+	// 0. 理智垮了 —— 盖过一切。再有钱有房，人垮了就是被压垮。
+	if (Sanity < BreakdownSanityThreshold)
+	{
+		return EEnding::Breakdown;
+	}
+
 	const bool bIsPRorCitizen =
 		(Status == EResidencyStatus::PR) || (Status == EResidencyStatus::Citizen);
 

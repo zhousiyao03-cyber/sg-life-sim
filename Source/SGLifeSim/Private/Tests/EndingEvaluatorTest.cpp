@@ -77,4 +77,28 @@ bool FEndingAdriftTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FEndingBreakdownTest,
+	"SGLifeSim.Ending.Breakdown",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEndingBreakdownTest::RunTest(const FString& Parameters)
+{
+	// 理智 < 15 → 被压垮，盖过一切（即便 PR + 有房 + 朋友 + 有钱）。
+	const EEnding E = FEndingEvaluator::EvaluateLeaning(
+		EResidencyStatus::Citizen, /*owns*/true, /*affinity*/90, EEDollars(500000), /*rej*/0, /*sanity*/5);
+	TestEqual(TEXT("low sanity -> Breakdown overrides everything"), E, EEnding::Breakdown);
+
+	// 理智 15（刚好不算崩溃）→ 走正常判定（这里 = 扎根）。
+	const EEnding E2 = FEndingEvaluator::EvaluateLeaning(
+		EResidencyStatus::PR, true, 60, EEDollars(50000), 0, /*sanity*/15);
+	TestEqual(TEXT("sanity 15 not breakdown -> Rooted"), E2, EEnding::Rooted);
+
+	// 默认 sanity（不传）= 100，不触发崩溃（向后兼容）。
+	const EEnding E3 = FEndingEvaluator::EvaluateLeaning(
+		EResidencyStatus::WorkPermit_EP, false, 15, EEDollars(20000), 0);
+	TestEqual(TEXT("default sanity -> not breakdown"), E3, EEnding::Adrift);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -19,9 +19,13 @@ public:
 	/** 「兑现离开」可触发的净资产阈值（分）：$300,000。 */
 	static constexpr int64 CashOutNetWorthCents = 30000000;
 
+	/** 理智低于此值视为「被压垮」（与 ESanityState::Breaking 对齐 = 15）。 */
+	static constexpr int32 BreakdownSanityThreshold = 15;
+
 	/**
 	 * 评估当前终局倾向（不代表已结束，玩家可主动选）。
 	 * 判定顺序（先到先得）：
+	 *   0. 理智 < 15（濒临崩溃）→ 被压垮（最高优先级，盖过一切——心先垮了）
 	 *   1. 净资产 < 0（破产）或 被拒过 PR 且仍非 PR → 心碎离开
 	 *   2. (PR|公民) + 有房 + 有「朋友」以上关系 → 扎根
 	 *   3. 净资产 ≥ $300k 且未扎根 → 兑现离开
@@ -32,5 +36,6 @@ public:
 		bool bOwnsHome,
 		int32 MaxAffinity,
 		int64 NetWorthCents,
-		int32 PRRejections);
+		int32 PRRejections,
+		int32 Sanity = 100);
 };
