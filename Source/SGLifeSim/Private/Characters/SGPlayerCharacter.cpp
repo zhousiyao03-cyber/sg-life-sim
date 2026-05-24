@@ -36,6 +36,7 @@
 #include "Systems/WeaponSubsystem.h"
 #include "Systems/WeaponTypes.h"
 #include "Systems/WantedSubsystem.h"
+#include "Systems/SGAudioSubsystem.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/SGStreetNPC.h"
 #include "Systems/SanitySubsystem.h"
@@ -196,6 +197,7 @@ void ASGPlayerCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (bClimbing) { TickClimb(); }
 	UpdateLocomotionAnimation();
+	UpdateFootsteps(DeltaSeconds);
 	DrawPrototypeHUD();
 
 	if (MinimapWidget)
@@ -240,6 +242,35 @@ void ASGPlayerCharacter::UpdateLocomotionAnimation()
 	{
 		MeshComp->PlayAnimation(DesiredAnim, /*bLooping=*/true);
 		CurrentAnim = DesiredAnim;
+	}
+}
+
+void ASGPlayerCharacter::UpdateFootsteps(float DeltaSeconds)
+{
+	// 只有在地面行走时累计步距；攀爬/跳跃中不算。
+	const UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (bClimbing || !MoveComp || !MoveComp->IsMovingOnGround())
+	{
+		return;
+	}
+
+	const float Speed = GetVelocity().Size2D();
+	if (Speed < WalkSpeedThreshold) { return; }
+
+	DistanceSinceLastStep += Speed * DeltaSeconds;
+
+	// 步距：常速约 1.8m 一步；速度越快步频越高（除以速度比例自然成立）。
+	const float StepDistance = bIsCrouched ? 120.f : 180.f;
+	if (DistanceSinceLastStep >= StepDistance)
+	{
+		DistanceSinceLastStep = 0.f;
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+			{
+				Audio->PlayCueAtLocation(ESGSound::Footstep, GetActorLocation());
+			}
+		}
 	}
 }
 
@@ -752,6 +783,15 @@ void ASGPlayerCharacter::Punch()
 	const FVector Forward = Ctrl->GetControlRotation().Vector();
 	const FVector End = Start + Forward * 200.f;
 
+	// 出拳音（E 块音效）。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+		{
+			Audio->PlayCue2D(ESGSound::Punch);
+		}
+	}
+
 	FHitResult Hit;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
@@ -760,6 +800,13 @@ void ASGPlayerCharacter::Punch()
 		if (ASGStreetNPC* Npc = Cast<ASGStreetNPC>(Hit.GetActor()))
 		{
 			Npc->TakeMeleeHit(34); // 三拳打倒一个路人（100 血）
+			if (UGameInstance* GI = GetGameInstance())
+			{
+				if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+				{
+					Audio->PlayCueAtLocation(ESGSound::NpcHit, Hit.ImpactPoint);
+				}
+			}
 		}
 	}
 
@@ -808,6 +855,12 @@ void ASGPlayerCharacter::Fire()
 		return;
 	}
 
+	// 枪声（E 块音效）。
+	if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+	{
+		Audio->PlayCue2D(ESGSound::Gunshot);
+	}
+
 	// 从相机（眼睛）沿视线射线，命中 StreetNPC 造成伤害。
 	const FVector Start = FirstPersonCamera ? FirstPersonCamera->GetComponentLocation() : GetActorLocation();
 	const FVector Dir = GetController() ? GetController()->GetControlRotation().Vector() : GetActorForwardVector();
@@ -821,6 +874,10 @@ void ASGPlayerCharacter::Fire()
 		if (ASGStreetNPC* Npc = Cast<ASGStreetNPC>(Hit.GetActor()))
 		{
 			Npc->TakeMeleeHit(Damage); // 复用通用受击入口（掉血 + 内部涨通缉）
+			if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+			{
+				Audio->PlayCueAtLocation(ESGSound::NpcHit, Hit.ImpactPoint);
+			}
 		}
 	}
 
@@ -840,6 +897,10 @@ void ASGPlayerCharacter::ReloadWeapon()
 			if (Weapon->HasGun())
 			{
 				Weapon->Reload();
+				if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+				{
+					Audio->PlayCue2D(ESGSound::Reload);
+				}
 				if (HudWidget)
 				{
 					HudWidget->SetDialogueText(FText::FromString(TEXT("🔁 换弹")));

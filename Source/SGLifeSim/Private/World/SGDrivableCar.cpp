@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/GameInstance.h"
+#include "Systems/SGAudioSubsystem.h"
 
 ASGDrivableCar::ASGDrivableCar()
 {
@@ -94,6 +96,15 @@ void ASGDrivableCar::OnInteract_Implementation(AActor* Interactor)
 
 	DriverPawn = AsPawn;
 	PC->Possess(this);
+
+	// 上车音（E 块）。引擎循环音待真音频资产，用 AudioComponent 接入。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+		{
+			Audio->PlayCue2D(ESGSound::CarEnter);
+		}
+	}
 }
 
 FText ASGDrivableCar::GetInteractionPrompt_Implementation() const

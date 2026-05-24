@@ -3,6 +3,7 @@
 #include "Systems/EconomySubsystem.h"
 #include "Systems/EconomyTypes.h"
 #include "Systems/WantedSubsystem.h"
+#include "Systems/SGAudioSubsystem.h"
 
 #include "Engine/GameInstance.h"
 
@@ -27,6 +28,18 @@ void UPlayerVitalsSubsystem::ApplyDamage(int32 Damage)
 	if (FPlayerVitalsSystem::IsDead(Health)) { return; } // 已死，等重生流程
 	Health = FPlayerVitalsSystem::ApplyDamage(Health, Damage);
 	OnHealthChanged.Broadcast(Health, FPlayerVitalsSystem::MaxHealth);
+
+	// 受伤音（E 块）。死亡音在 Die() 里。
+	if (Damage > 0 && !FPlayerVitalsSystem::IsDead(Health))
+	{
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+			{
+				Audio->PlayCue2D(ESGSound::PlayerHurt);
+			}
+		}
+	}
 
 	if (FPlayerVitalsSystem::IsDead(Health))
 	{
@@ -69,6 +82,12 @@ void UPlayerVitalsSubsystem::Die()
 		if (UWantedSubsystem* Wanted = GI->GetSubsystem<UWantedSubsystem>())
 		{
 			Wanted->ClearWanted();
+		}
+
+		// 死亡音（E 块）。
+		if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+		{
+			Audio->PlayCue2D(ESGSound::PlayerDeath);
 		}
 	}
 

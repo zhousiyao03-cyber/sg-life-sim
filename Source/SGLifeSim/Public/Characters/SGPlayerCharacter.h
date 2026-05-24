@@ -199,4 +199,10 @@ private:
 	/** 第一/第三人称下相机相对胶囊的位置（ToggleView 在两者间切）。 */
 	FVector FirstPersonCameraOffset = FVector(10.f, 0.f, 64.f);
 	FVector ThirdPersonCameraOffset = FVector(-300.f, 0.f, 90.f);
+
+	/** 行走累计距离（cm），每过一个步距触发一次脚步音（E 块）。 */
+	float DistanceSinceLastStep = 0.f;
+
+	/** 每帧累积移动距离、按步距触发脚步音（资产未接入时静默）。 */
+	void UpdateFootsteps(float DeltaSeconds);
 };
