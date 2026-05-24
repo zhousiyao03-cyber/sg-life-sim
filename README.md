@@ -17,6 +17,7 @@
 | M | 弹出菜单：切换地点（出租屋 ↔ 食阁，时间跨关卡保留）/ 存读档 / 按揭买房·还贷 / 升职·跳槽 /「做点事…」开活动菜单 |
 
 - 两个关卡：`L_Rental`（出租屋，暖色居家）/ `L_HawkerCenter`（食阁，开放摊位带桌凳）
+- 4 个可对话 NPC（关卡加载时由 `USGWorldPopulatorSubsystem` 代码生成，免手摆 .umap）：出租屋有邻居 Ah Hua + 保安 Uncle Lim，食阁有阿姨 Ah Mei + 同事 Wei，各有独立性格 / 分支 / 好感奖励
 - 核心系统在 C++（移动 / 等距相机 / locomotion / 交互 / 时间 / 场景切换），Blueprint 仅作薄壳
 - UI 全用**纯 C++ UMG**（控件树在 C++ 里构造，无需 BP widget 资产）：`USGHudWidget`（顶部状态行 +
   底部交互提示 + 对话气泡）、`USGLocationMenuWidget`（M 键弹出的可点击地点菜单）。
@@ -45,7 +46,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 
 玩家操作已接入系统（Plan 3/4/6/7/8）：按 E 与 NPC 开对话面板（选项门控/施加好感等效果）+ 耗能量、推时间触发月度发薪/账单/投资回报/房贷月供、HUD 实时显示职位月薪/钱包/属性/身份/住房/房贷/终局倾向、菜单可存读档 + 按揭买房/还贷 + 升职/跳槽。
 
-跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **62 个全绿**。
+跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **63 个全绿**。
 
 ## 类型
 
@@ -58,7 +59,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 ## 文档
 
 - 设计文档（spec）：[docs/specs/2026-05-23-sg-life-sim-design.md](docs/specs/2026-05-23-sg-life-sim-design.md)
-- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）
+- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）· [Plan 12 代码驱动 NPC 入世](docs/plans/2026-05-24-world-population.md)（✅）
 - 决策记录：[docs/decisions/](docs/decisions/)
 
 ## 技术栈

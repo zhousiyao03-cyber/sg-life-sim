@@ -123,7 +123,91 @@ FDialogueTree SGDialogueContent::BuildAhMeiTree()
 	return Tree;
 }
 
+FDialogueTree SGDialogueContent::BuildUncleLimTree()
+{
+	const FText Speaker = FText::FromString(TEXT("保安 Uncle Lim"));
+	const FName Npc = TEXT("UncleLim");
+
+	FDialogueChoice Chat = MakeChoice(TEXT("打个招呼"), TEXT("chat"));
+	Chat.Effect.Type = EDialogueEffectType::AddAffinity;
+	Chat.Effect.Target = Npc;
+	Chat.Effect.Value = 3;
+
+	FDialogueChoice Gossip = MakeChoice(TEXT("问问楼里最近的事"), TEXT("gossip"));
+	Gossip.Effect.Type = EDialogueEffectType::AddAffinity;
+	Gossip.Effect.Target = Npc;
+	Gossip.Effect.Value = 2;
+
+	// 好感够了，Uncle 请喝 kopi（小奖励 +$1）。
+	FDialogueChoice Kopi = MakeChoice(TEXT("跟 Uncle 聊到他要请喝 kopi"), TEXT("kopi"));
+	Kopi.Condition.Type = EDialogueConditionType::MinAffinity;
+	Kopi.Condition.Target = Npc;
+	Kopi.Condition.Value = 60;
+	Kopi.Effect.Type = EDialogueEffectType::AddMoneyCents;
+	Kopi.Effect.Value = 100; // +$1
+
+	FDialogueTree Tree;
+	Tree.TreeId = Npc;
+	Tree.RootNodeId = TEXT("root");
+	Tree.Nodes = {
+		MakeNode(TEXT("root"), Speaker, TEXT("回来啦？今天加班到这么晚，辛苦咯。"),
+			{ Chat, Gossip, Kopi, MakeEndChoice(TEXT("点头致意")) }),
+
+		MakeNode(TEXT("chat"), Speaker, TEXT("有什么事按门铃找我，叔叔在这看了十几年咯。"),
+			{ MakeEndChoice(TEXT("有劳 Uncle")) }),
+
+		MakeNode(TEXT("gossip"), Speaker, TEXT("三楼那家上个月搬走了，听说去 BTO 排到组屋了，啧，年轻人有出息。"),
+			{ MakeEndChoice(TEXT("羡慕啊")) }),
+
+		MakeNode(TEXT("kopi"), Speaker, TEXT("走，楼下 kopi 我请！别推辞，叔叔难得碰到聊得来的。"),
+			{ MakeEndChoice(TEXT("那就谢谢 Uncle 啦")) }),
+	};
+	return Tree;
+}
+
+FDialogueTree SGDialogueContent::BuildColleagueWeiTree()
+{
+	const FText Speaker = FText::FromString(TEXT("同事 Wei"));
+	const FName Npc = TEXT("Wei");
+
+	FDialogueChoice Chat = MakeChoice(TEXT("吐槽两句今天的活"), TEXT("chat"));
+	Chat.Effect.Type = EDialogueEffectType::AddAffinity;
+	Chat.Effect.Target = Npc;
+	Chat.Effect.Value = 3;
+
+	FDialogueChoice Career = MakeChoice(TEXT("问问他怎么涨薪比较快"), TEXT("career"));
+	Career.Effect.Type = EDialogueEffectType::AddAffinity;
+	Career.Effect.Target = Npc;
+	Career.Effect.Value = 2;
+
+	// 好感够了，Wei 帮内推 —— 解锁成就。
+	FDialogueChoice Referral = MakeChoice(TEXT("聊到他愿意帮你内推"), TEXT("referral"));
+	Referral.Condition.Type = EDialogueConditionType::MinAffinity;
+	Referral.Condition.Target = Npc;
+	Referral.Condition.Value = 50;
+	Referral.Effect.Type = EDialogueEffectType::MarkAchievement;
+	Referral.Effect.Target = SGAchievementIds::KnowColleague();
+
+	FDialogueTree Tree;
+	Tree.TreeId = Npc;
+	Tree.RootNodeId = TEXT("root");
+	Tree.Nodes = {
+		MakeNode(TEXT("root"), Speaker, TEXT("哟，也来这边吃啊？坐坐坐，今天那个线上 bug 你看了没？"),
+			{ Chat, Career, Referral, MakeEndChoice(TEXT("改天聊")) }),
+
+		MakeNode(TEXT("chat"), Speaker, TEXT("PM 又临时加需求，我都麻了。在这行啊，习惯就好。"),
+			{ MakeEndChoice(TEXT("同感同感")) }),
+
+		MakeNode(TEXT("career"), Speaker, TEXT("说真的，跳槽涨得比死等升职快多了。骑驴找马，机会到了就跳。"),
+			{ MakeEndChoice(TEXT("受教了")) }),
+
+		MakeNode(TEXT("referral"), Speaker, TEXT("我们组在招人，待遇不错。你简历发我，我帮你内推一下！"),
+			{ MakeEndChoice(TEXT("太够意思了，谢谢 Wei！")) }),
+	};
+	return Tree;
+}
+
 TArray<FDialogueTree> SGDialogueContent::BuildAllTrees()
 {
-	return { BuildAhHuaTree(), BuildAhMeiTree() };
+	return { BuildAhHuaTree(), BuildAhMeiTree(), BuildUncleLimTree(), BuildColleagueWeiTree() };
 }

@@ -17,6 +17,12 @@ namespace SGDialogueContent
 	/** 食阁阿姨 Ah Mei（卖鸡饭，唠叨但热心）。 */
 	SGLIFESIM_API FDialogueTree BuildAhMeiTree();
 
+	/** 出租屋楼下保安 Uncle Lim（热心，好感高了请喝 kopi）。 */
+	SGLIFESIM_API FDialogueTree BuildUncleLimTree();
+
+	/** 同事 Wei（食阁午饭碰到，给职场建议，好感够了帮内推）。 */
+	SGLIFESIM_API FDialogueTree BuildColleagueWeiTree();
+
 	/** 全部对话树。 */
 	SGLIFESIM_API TArray<FDialogueTree> BuildAllTrees();
 }

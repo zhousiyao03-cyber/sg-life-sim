@@ -27,6 +27,13 @@ public:
 	/** 「Speaker：Line」格式的整句，供玩家 HUD 对话气泡显示。 */
 	FText GetDialogueDisplayText() const;
 
+	/**
+	 * 代码生成 NPC 时的初始化（设 NpcId / 说话人 / 占位台词 / 骨骼网格）。
+	 * 供 USGWorldPopulatorSubsystem 在关卡加载时填充世界用，免手摆 .umap。
+	 */
+	void ConfigureNpc(FName InNpcId, const FText& InSpeakerName, const FString& InDialogueLine,
+		USkeletalMesh* InMesh = nullptr);
+
 	/** 关系系统的稳定 key（如 AhHua / Auntie）。供 URelationshipSubsystem 记好感。 */
 	FName GetNpcId() const { return NpcId; }
 

@@ -3,6 +3,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/SkeletalMesh.h"
 
 ASGInteractableNPC::ASGInteractableNPC()
 {
@@ -37,4 +38,17 @@ FText ASGInteractableNPC::GetDialogueDisplayText() const
 {
 	return FText::FromString(FString::Printf(TEXT("%s：%s"),
 		*SpeakerName.ToString(), *DialogueLine.ToString()));
+}
+
+void ASGInteractableNPC::ConfigureNpc(FName InNpcId, const FText& InSpeakerName,
+	const FString& InDialogueLine, USkeletalMesh* InMesh)
+{
+	NpcId = InNpcId;
+	SpeakerName = InSpeakerName;
+	DialogueLine = FText::FromString(InDialogueLine);
+
+	if (InMesh && NpcMesh)
+	{
+		NpcMesh->SetSkeletalMesh(InMesh);
+	}
 }

@@ -23,6 +23,9 @@ namespace SGAchievementIds
 	/** 听完邻居 Ah Hua 当年打拼的故事。 */
 	inline FName KnowNeighborStory() { return FName(TEXT("KnowNeighborStory")); }
 
+	/** 拿到同事 Wei 的内推机会。 */
+	inline FName KnowColleague() { return FName(TEXT("KnowColleague")); }
+
 	/** 净资产达成阈值（分）：$10,000。 */
 	inline constexpr int64 NetWorth10kThresholdCents = 1000000;
 }
