@@ -146,12 +146,15 @@ FDialogueTree SGDialogueContent::BuildUncleLimTree()
 	Kopi.Effect.Type = EDialogueEffectType::AddMoneyCents;
 	Kopi.Effect.Value = 100; // +$1
 
+	// 看了十几年的保安，最有七月的故事。（恐怖方向插入桥段）
+	FDialogueChoice Ghost = MakeChoice(TEXT("问 Uncle 这栋楼有没有什么『不干净』的事"), TEXT("ghost"));
+
 	FDialogueTree Tree;
 	Tree.TreeId = Npc;
 	Tree.RootNodeId = TEXT("root");
 	Tree.Nodes = {
 		MakeNode(TEXT("root"), Speaker, TEXT("回来啦？今天加班到这么晚，辛苦咯。"),
-			{ Chat, Gossip, Kopi, MakeEndChoice(TEXT("点头致意")) }),
+			{ Chat, Gossip, Kopi, Ghost, MakeEndChoice(TEXT("点头致意")) }),
 
 		MakeNode(TEXT("chat"), Speaker, TEXT("有什么事按门铃找我，叔叔在这看了十几年咯。"),
 			{ MakeEndChoice(TEXT("有劳 Uncle")) }),
@@ -161,6 +164,12 @@ FDialogueTree SGDialogueContent::BuildUncleLimTree()
 
 		MakeNode(TEXT("kopi"), Speaker, TEXT("走，楼下 kopi 我请！别推辞，叔叔难得碰到聊得来的。"),
 			{ MakeEndChoice(TEXT("那就谢谢 Uncle 啦")) }),
+
+		MakeNode(TEXT("ghost"), Speaker, TEXT("……你也是七月才问这个。十几年前 13 楼那间，半夜电梯老停在那层，门开了没人。后来封了。"),
+			{ MakeChoice(TEXT("那现在呢？"), TEXT("ghost2")), MakeEndChoice(TEXT("我还是别问了")) }),
+
+		MakeNode(TEXT("ghost2"), Speaker, TEXT("现在？七月你晚上回来，电梯要是自己停在 13 楼，记得——别进去，等下一趟。"),
+			{ MakeEndChoice(TEXT("……我记住了")) }),
 	};
 	return Tree;
 }

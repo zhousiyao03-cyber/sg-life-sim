@@ -28,6 +28,7 @@
 #include "Systems/EndingSubsystem.h"
 #include "Systems/MilestoneSubsystem.h"
 #include "Systems/MilestoneSystem.h"
+#include "Systems/HorrorEventSubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
@@ -116,6 +117,10 @@ void ASGPlayerCharacter::BeginPlay()
 		if (UMilestoneSubsystem* Milestones = GI->GetSubsystem<UMilestoneSubsystem>())
 		{
 			Milestones->OnMilestoneCompleted.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleMilestoneCompleted);
+		}
+		if (UHorrorEventSubsystem* Horror = GI->GetSubsystem<UHorrorEventSubsystem>())
+		{
+			Horror->OnHorrorEvent.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleHorrorEvent);
 		}
 	}
 
@@ -295,6 +300,20 @@ void ASGPlayerCharacter::HandleMilestoneCompleted(EMilestone Milestone)
 	}
 }
 
+void ASGPlayerCharacter::HandleHorrorEvent(FText Title)
+{
+	// 用对话气泡（底部居中、停留久一点）呈现阴森文案，比顶部 toast 更沉浸。
+	if (HudWidget && !Title.IsEmpty())
+	{
+		HudWidget->SetDialogueText(FText::FromString(FString::Printf(TEXT("🕯 %s"), *Title.ToString())));
+		FTimerDelegate ClearDel = FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }
+		});
+		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 8.f, /*bLoop=*/false);
+	}
+}
+
 void ASGPlayerCharacter::AdvanceTime()
 {
 	if (UGameInstance* GI = GetGameInstance())
@@ -395,9 +414,17 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 			const FText StatusText = UEnum::GetDisplayValueAsText(Res->GetStatus());
 			const FText HousingText = UEnum::GetDisplayValueAsText(Assets->GetHousingTier());
 			const FText LeaningText = UEnum::GetDisplayValueAsText(End->GetCurrentLeaning());
-			HudWidget->SetProgressionText(FText::FromString(FString::Printf(
-				TEXT("身份 %s · 住房 %s · 走向 %s"),
-				*StatusText.ToString(), *HousingText.ToString(), *LeaningText.ToString())));
+			FString Progression = FString::Printf(TEXT("身份 %s · 住房 %s · 走向 %s"),
+				*StatusText.ToString(), *HousingText.ToString(), *LeaningText.ToString());
+			// 农历七月（鬼月）期间在进阶行末尾挂个阴森指示。
+			if (UHorrorEventSubsystem* Horror = GI->GetSubsystem<UHorrorEventSubsystem>())
+			{
+				if (Horror->IsGhostMonth())
+				{
+					Progression += TEXT("   ·   🕯 农历七月");
+				}
+			}
+			HudWidget->SetProgressionText(FText::FromString(Progression));
 		}
 	}
 

@@ -96,6 +96,10 @@ private:
 	UFUNCTION()
 	void HandleMilestoneCompleted(EMilestone Milestone);
 
+	/** 绑定到 UHorrorEventSubsystem::OnHorrorEvent，弹阴森 toast。 */
+	UFUNCTION()
+	void HandleHorrorEvent(FText Title);
+
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimSequence> CurrentAnim;
