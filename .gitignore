@@ -43,6 +43,9 @@ Thumbs.db
 # UE Developer 沙盒（每个开发者私有，不进版本控制）
 /Content/Developers/
 
+# 第三方开发工具：UE5 MCP 自动化桥（ChiR24/Unreal_mcp，MIT）—— 开发期工具，不属于游戏，不入库
+/Plugins/McpAutomationBridge/
+
 # 本地工具缓存
 /scripts/__pycache__/
 
