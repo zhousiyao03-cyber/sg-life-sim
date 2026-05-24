@@ -81,7 +81,7 @@ private:
 	/** IA_AdvanceTime（T）：推进一个时间块（经 UTimeSubsystem）。 */
 	void AdvanceTime();
 
-	/** IA_OpenLocationMenu（M）：在出租屋 / 食阁两个关卡间切换。原型用直接跳转代替菜单 UMG。 */
+	/** IA_OpenLocationMenu（M）：开/关游戏菜单（存读档/活动/出门回城市等）。 */
 	void SwitchLocation();
 
 	/** 每帧刷新 HUD widget 的状态行 + 交互提示 + 钱包 / 属性。 */

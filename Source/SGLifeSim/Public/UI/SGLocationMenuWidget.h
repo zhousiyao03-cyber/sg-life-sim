@@ -30,11 +30,9 @@ public:
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
+	/** 出门：从室内关卡回到城市枢纽（走 LocationManager::ReturnToCity，传送回原楼门口）。 */
 	UFUNCTION()
-	void OnGoRental();
-
-	UFUNCTION()
-	void OnGoHawker();
+	void OnExitToCity();
 
 	UFUNCTION()
 	void OnSaveClicked();
@@ -103,11 +101,9 @@ private:
 	/** 是否正处于夜归抉择子界面（决定刷新时露哪组按钮）。 */
 	bool bInNightCommute = false;
 
+	/** 出门回城市（仅在室内关卡显示；在城市枢纽里靠走门口按 E 进楼，不用此按钮）。 */
 	UPROPERTY(Transient)
-	TObjectPtr<UButton> RentalButton;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UButton> HawkerButton;
+	TObjectPtr<UButton> ExitToCityButton;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> SaveButton;

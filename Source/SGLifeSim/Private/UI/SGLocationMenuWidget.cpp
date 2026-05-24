@@ -18,6 +18,8 @@
 #include "Systems/NightCommuteSubsystem.h"
 #include "Systems/NightCommuteTypes.h"
 #include "UI/SGActivityMenuWidget.h"
+#include "World/LocationManagerSubsystem.h"
+#include "World/LocationRegistry.h"
 
 namespace
 {
@@ -111,21 +113,14 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 		}
 		CommuteStairsButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnCommuteStairsClicked);
 
-		RentalButton = MakeButton(WidgetTree, TEXT("出租屋  ·  L_Rental"), TEXT("RentalButton"));
-		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(RentalButton))
-		{
-			BoxSlot->SetPadding(FMargin(0.f, 4.f));
-			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
-		}
-		RentalButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnGoRental);
-
-		HawkerButton = MakeButton(WidgetTree, TEXT("食阁  ·  L_HawkerCenter"), TEXT("HawkerButton"));
-		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(HawkerButton))
-		{
-			BoxSlot->SetPadding(FMargin(0.f, 4.f));
-			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
-		}
-		HawkerButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnGoHawker);
+		// 出门回城市（仅室内关卡显示）。城市里靠走门口按 E 进楼，不在菜单里瞬移。
+			ExitToCityButton = MakeButton(WidgetTree, TEXT("出门（回大街）"), TEXT("ExitToCityButton"));
+			if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(ExitToCityButton))
+			{
+				BoxSlot->SetPadding(FMargin(0.f, 4.f));
+				BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+			}
+			ExitToCityButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnExitToCity);
 
 		SaveButton = MakeButton(WidgetTree, TEXT("存档"), TEXT("SaveButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(SaveButton))
@@ -253,14 +248,27 @@ void USGLocationMenuWidget::TravelTo(FName LevelName)
 	}
 }
 
-void USGLocationMenuWidget::OnGoRental()
+void USGLocationMenuWidget::OnExitToCity()
 {
-	TravelTo(FName(TEXT("L_Rental")));
-}
+	// 恢复游戏输入、关菜单，再让 LocationManager 把我们送回城市枢纽
+	// （ReturnToCity 内部 OpenLevel L_City，并标记回程把玩家传送回离开时的那栋楼门口）。
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
+	RemoveFromParent();
 
-void USGLocationMenuWidget::OnGoHawker()
-{
-	TravelTo(FName(TEXT("L_HawkerCenter")));
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (USGLocationManagerSubsystem* Loc = GI->GetSubsystem<USGLocationManagerSubsystem>())
+			{
+				Loc->ReturnToCity();
+			}
+		}
+	}
 }
 
 void USGLocationMenuWidget::OnSaveClicked()
@@ -432,6 +440,12 @@ void USGLocationMenuWidget::RefreshButtonVisibility()
 	const ESlateVisibility EntranceVis = (!bInNightCommute && IsNightCommuteAvailable())
 		? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
 
+	// 「出门」只在室内关卡有意义；人已在城市枢纽时藏起来（城市靠走门口按 E 进楼）。
+	const FString CurLevel = UGameplayStatics::GetCurrentLevelName(this, /*bRemovePrefix=*/true);
+	const bool bInCity = CurLevel.Contains(FLocationRegistry::GetCityLevelName().ToString());
+	const ESlateVisibility ExitVis = (!bInNightCommute && !bInCity)
+		? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+
 	auto SetVis = [](UButton* Btn, ESlateVisibility Vis) { if (Btn) { Btn->SetVisibility(Vis); } };
 
 	SetVis(NightCommuteButton, EntranceVis);
@@ -440,8 +454,7 @@ void USGLocationMenuWidget::RefreshButtonVisibility()
 	SetVis(CommuteStepInButton, ChoiceVis);
 	SetVis(CommuteStairsButton, ChoiceVis);
 
-	SetVis(RentalButton, DailyVis);
-	SetVis(HawkerButton, DailyVis);
+	SetVis(ExitToCityButton, ExitVis);
 	SetVis(SaveButton, DailyVis);
 	SetVis(LoadButton, DailyVis);
 	SetVis(BuyHdbButton, DailyVis);

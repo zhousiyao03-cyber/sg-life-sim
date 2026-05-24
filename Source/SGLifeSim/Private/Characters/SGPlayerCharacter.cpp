@@ -72,16 +72,15 @@ ASGPlayerCharacter::ASGPlayerCharacter()
 	}
 
 	// 相机挂在胶囊眼高，自己吃控制器俯仰/偏航（鼠标视角）。
+	// 略向前偏，让相机出在「脸前」而非头部内部——低头能看见自己的躯干/手脚而不穿到头里。
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 64.f)); // 眼高
+	FirstPersonCamera->SetRelativeLocation(FVector(10.f, 0.f, 64.f)); // 眼高 + 略前
 	FirstPersonCamera->bUsePawnControlRotation = true;
 
-	// 第一人称看不到自己那具（占位）身体；mesh 仍在（投影/未来镜面用），只是 owner 不可见。
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
-	{
-		MeshComp->SetOwnerNoSee(true);
-	}
+	// 「能看到自己身体」的第一人称：不再对 owner 隐藏 mesh，低头能看见手脚躯干。
+	// 注意：占位 SK_Player 是整具人形，相机在眼高会看到颈部内侧——故相机前移（上面），
+	// 后续换专用 FP 手臂 mesh 或给身体 mesh 隐藏头部骨骼可进一步消除穿模。
 }
 
 void ASGPlayerCharacter::BeginPlay()
@@ -232,6 +231,11 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		// EnhancedInputComponent 继承自 UInputComponent，legacy BindAxis 仍可用。
 		PlayerInputComponent->BindAxis(TEXT("Turn"), this, &APawn::AddControllerYawInput);
 		PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &APawn::AddControllerPitchInput);
+
+		// 跳跃：legacy 动作 Jump（空格，见 DefaultInput.ini）→ ACharacter 内置跳跃。
+		// 重力/落地由 CharacterMovement 处理，无需额外代码。
+		PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
+		PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
