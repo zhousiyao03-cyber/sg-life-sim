@@ -81,6 +81,18 @@ private:
 	/** 换弹键（R）：补满当前武器弹匣（C 块）。 */
 	void ReloadWeapon();
 
+	/** 冲刺键（Shift）按下：提高移动速度。 */
+	void StartSprint();
+
+	/** 冲刺键（Shift）松开：恢复常速。 */
+	void StopSprint();
+
+	/** 蹲键（Ctrl）：切换蹲下/起立。 */
+	void ToggleCrouch();
+
+	/** 视角键（V）：在第一/第三人称间切换（拉近/拉远相机）。 */
+	void ToggleView();
+
 	/** 进入攀爬：前方有墙才成立。关重力、贴墙。 */
 	void StartClimb();
 
@@ -176,4 +188,15 @@ private:
 	/** 本关出生点（死亡重生传送回此处）。BeginPlay 记录玩家落地位置。 */
 	FVector SpawnLocation = FVector::ZeroVector;
 	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	/** 常速 / 冲刺速（cm/s），StartSprint/StopSprint 在两者间切 MaxWalkSpeed。 */
+	float NormalWalkSpeed = 0.f;
+	float SprintWalkSpeed = 0.f;
+
+	/** 当前是否第三人称（V 切换）。第一人称相机贴脸，第三人称相机拉到身后。 */
+	bool bThirdPerson = false;
+
+	/** 第一/第三人称下相机相对胶囊的位置（ToggleView 在两者间切）。 */
+	FVector FirstPersonCameraOffset = FVector(10.f, 0.f, 64.f);
+	FVector ThirdPersonCameraOffset = FVector(-300.f, 0.f, 90.f);
 };

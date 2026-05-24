@@ -74,6 +74,12 @@ ASGPlayerCharacter::ASGPlayerCharacter()
 	{
 		// 第一人称下身体跟视线，不再朝移动方向转。
 		MoveComp->bOrientRotationToMovement = false;
+
+		// 冲刺/蹲（D 块）：常速取移动组件默认，冲刺为其 1.7 倍；允许下蹲。
+		NormalWalkSpeed = MoveComp->MaxWalkSpeed;
+		SprintWalkSpeed = NormalWalkSpeed * 1.7f;
+		MoveComp->NavAgentProps.bCanCrouch = true;
+		MoveComp->MaxWalkSpeedCrouched = NormalWalkSpeed * 0.5f;
 	}
 
 	// 相机挂在胶囊眼高，自己吃控制器俯仰/偏航（鼠标视角）。
@@ -267,6 +273,12 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		// 开火 / 换弹：legacy 动作 Fire（鼠标左键）/ Reload（R）（C 块枪械）。
 		PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ASGPlayerCharacter::Fire);
 		PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &ASGPlayerCharacter::ReloadWeapon);
+
+		// 冲刺（Shift 按住）/ 蹲（Ctrl 切换）/ 视角切换（V）（D 块）。
+		PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &ASGPlayerCharacter::StartSprint);
+		PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &ASGPlayerCharacter::StopSprint);
+		PlayerInputComponent->BindAction(TEXT("Crouch"), IE_Pressed, this, &ASGPlayerCharacter::ToggleCrouch);
+		PlayerInputComponent->BindAction(TEXT("ToggleView"), IE_Pressed, this, &ASGPlayerCharacter::ToggleView);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
@@ -837,5 +849,39 @@ void ASGPlayerCharacter::ReloadWeapon()
 				}
 			}
 		}
+	}
+}
+
+void ASGPlayerCharacter::StartSprint()
+{
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->MaxWalkSpeed = SprintWalkSpeed;
+	}
+}
+
+void ASGPlayerCharacter::StopSprint()
+{
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->MaxWalkSpeed = NormalWalkSpeed;
+	}
+}
+
+void ASGPlayerCharacter::ToggleCrouch()
+{
+	// 攀爬态不蹲。
+	if (bClimbing) { return; }
+	if (bIsCrouched) { UnCrouch(); }
+	else { Crouch(); }
+}
+
+void ASGPlayerCharacter::ToggleView()
+{
+	bThirdPerson = !bThirdPerson;
+	if (FirstPersonCamera)
+	{
+		FirstPersonCamera->SetRelativeLocation(
+			bThirdPerson ? ThirdPersonCameraOffset : FirstPersonCameraOffset);
 	}
 }
