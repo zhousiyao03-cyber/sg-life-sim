@@ -4,6 +4,9 @@
 #include "Systems/ResidencySubsystem.h"
 #include "Systems/ProgressSubsystem.h"
 #include "Systems/EconomySubsystem.h"
+#include "Systems/HorrorCodexSubsystem.h"
+#include "Systems/HorrorEventTypes.h"
+#include "Systems/SanitySubsystem.h"
 
 void UDialogueSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -52,6 +55,13 @@ bool UDialogueSubsystem::EvaluateCondition(const FDialogueCondition& Condition) 
 		}
 		return false;
 
+	case EDialogueConditionType::HasDiscoveredHorror:
+		if (const UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
+		{
+			return Codex->HasDiscovered((EHorrorEvent)Condition.Value);
+		}
+		return false;
+
 	default:
 		return false;
 	}
@@ -92,6 +102,13 @@ void UDialogueSubsystem::ApplyEffect(const FDialogueEffect& Effect)
 		if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
 		{
 			Prog->MarkAchieved(Effect.Target);
+		}
+		break;
+
+	case EDialogueEffectType::AddSanity:
+		if (USanitySubsystem* Sanity = GI->GetSubsystem<USanitySubsystem>())
+		{
+			Sanity->Restore((int32)Effect.Value);
 		}
 		break;
 

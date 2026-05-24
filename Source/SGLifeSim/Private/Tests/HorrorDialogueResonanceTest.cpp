@@ -1,0 +1,82 @@
+#include "CoreMinimal.h"
+#include "Misc/AutomationTest.h"
+#include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+
+#include "Systems/DialogueSubsystem.h"
+#include "Systems/HorrorCodexSubsystem.h"
+#include "Systems/HorrorEventSubsystem.h"
+#include "Systems/HorrorEventTypes.h"
+#include "Systems/SanitySubsystem.h"
+
+#if WITH_DEV_AUTOMATION_TESTS
+
+namespace
+{
+	/** 在当前节点的可见选项里找到含某子串的那一项的 visible index；找不到返回 -1。 */
+	int32 FindChoiceContaining(const UDialogueSubsystem* Dlg, const TCHAR* Needle)
+	{
+		const TArray<FText> Texts = Dlg->GetChoiceTexts();
+		for (int32 i = 0; i < Texts.Num(); ++i)
+		{
+			if (Texts[i].ToString().Contains(Needle))
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+}
+
+/**
+ * 恐怖共鸣对话（Plan 22）：亲历过电梯空楼层后，Uncle Lim 才出现「坦白」分支；
+ * 选它被理解后回一点理智。验证 HasDiscoveredHorror 门控 + AddSanity 效果。
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FHorrorDialogueResonanceTest,
+	"SGLifeSim.Integration.HorrorDialogueResonance",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FHorrorDialogueResonanceTest::RunTest(const FString& Parameters)
+{
+	UGameInstance* GI = NewObject<UGameInstance>(GEngine);
+	if (!GI) { return false; }
+	GI->InitializeStandalone();
+
+	UDialogueSubsystem*    Dlg    = GI->GetSubsystem<UDialogueSubsystem>();
+	UHorrorEventSubsystem* Horror = GI->GetSubsystem<UHorrorEventSubsystem>();
+	UHorrorCodexSubsystem* Codex  = GI->GetSubsystem<UHorrorCodexSubsystem>();
+	USanitySubsystem*      Sanity = GI->GetSubsystem<USanitySubsystem>();
+	if (!Dlg || !Horror || !Codex || !Sanity) { GI->Shutdown(); return false; }
+
+	// 未亲历电梯空楼层：开 Uncle Lim 对话，「坦白」分支不可见。
+	TestTrue(TEXT("start UncleLim dialogue"), Dlg->StartDialogue(TEXT("UncleLim")));
+	const int32 BeforeIdx = FindChoiceContaining(Dlg, TEXT("空楼层的电梯，我前几天真的碰到了"));
+	TestEqual(TEXT("confide hidden before encounter"), BeforeIdx, -1);
+	// 重新 StartDialogue 会重置到根节点，无需显式结束。
+
+	// 亲历电梯空楼层（写进图鉴），并制造理智缺口。
+	Horror->ApplyEvent(EHorrorEvent::ElevatorGhostFloor);
+	TestTrue(TEXT("codex recorded elevator"), Codex->HasDiscovered(EHorrorEvent::ElevatorGhostFloor));
+	Sanity->Drain(40); // 100 -> 60，留出回升空间
+	const int32 SanityBefore = Sanity->GetSanity();
+
+	// 再开对话：「坦白」分支应出现。
+	TestTrue(TEXT("restart UncleLim dialogue"), Dlg->StartDialogue(TEXT("UncleLim")));
+	const int32 ConfideIdx = FindChoiceContaining(Dlg, TEXT("空楼层的电梯，我前几天真的碰到了"));
+	TestTrue(TEXT("confide visible after encounter"), ConfideIdx >= 0);
+
+	// 选它进入 confide 节点，再选「被人信着」回理智 +12。
+	TestTrue(TEXT("choose confide"), Dlg->ChooseOption(ConfideIdx));
+	const int32 ReassureIdx = FindChoiceContaining(Dlg, TEXT("被人信着"));
+	TestTrue(TEXT("reassure choice present"), ReassureIdx >= 0);
+	TestTrue(TEXT("choose reassure"), Dlg->ChooseOption(ReassureIdx));
+
+	TestEqual(TEXT("sanity restored by +12"), Sanity->GetSanity(), SanityBefore + 12);
+	TestFalse(TEXT("dialogue ended after reassure"), Dlg->IsDialogueActive());
+
+	GI->Shutdown();
+	return true;
+}
+
+#endif // WITH_DEV_AUTOMATION_TESTS

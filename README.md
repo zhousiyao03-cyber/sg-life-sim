@@ -46,12 +46,12 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 | 理智 | `FSanitySystem` / `USanitySubsystem` | 理智 0~100（平静/不安/失常/濒临崩溃）：恐怖事件消耗理智，理智越低深夜越频越凶（恐惧螺旋）；每日缓慢恢复但鬼月无喘息；进存档 |
 | 图鉴 | `FHorrorCodexSystem` / `UHorrorCodexSubsystem` | 都市传说收集：亲历过的恐怖事件记进图鉴（bitmask），未遇到的显示「？？？」；首条解锁/集齐有成就；进存档；HUD 显示「N / M」收集进度 |
 | 终局 | `FEndingEvaluator` / `UEndingSubsystem` | 五终局：四软终局（扎根/兑现/心碎/漂着）+ 恐怖坏结局「被压垮」（理智耗尽，盖过一切）；评估倾向 + 主动选择 + 归零强制 |
-| 对话 | `FDialogueSystem` / `UDialogueSubsystem` + `USGDialogueWidget` + `SGDialogueContent` | 数据驱动对话树：选项条件门控（好感/身份/成就）+ 效果（好感/钱/成就）；按 E 弹纯 C++ UMG 对话面板。内容数据化（邻居 Ah Hua 多分支故事弧 + 食阁阿姨 Ah Mei），含 `ValidateTree` 完整性校验器 |
+| 对话 | `FDialogueSystem` / `UDialogueSubsystem` + `USGDialogueWidget` + `SGDialogueContent` | 数据驱动对话树：选项条件门控（好感/身份/成就/**亲历过某都市传说**）+ 效果（好感/钱/成就/**回理智**）；按 E 弹纯 C++ UMG 对话面板。内容数据化（邻居 Ah Hua 多分支故事弧 + 食阁阿姨 Ah Mei + 保安 Uncle Lim 电梯空楼层**恐怖共鸣**分支），含 `ValidateTree` 完整性校验器 |
 | 存档 | `USGSaveGame` / `USaveGameSubsystem` | 聚合全部系统状态，`SaveGameToSlot`/`LoadGameFromSlot` |
 
 玩家操作已接入系统（Plan 3/4/6/7/8）：按 E 与 NPC 开对话面板（选项门控/施加好感等效果）+ 耗能量、推时间触发月度发薪/账单/投资回报/房贷月供、HUD 实时显示职位月薪/钱包/属性/身份/住房/房贷/终局倾向、菜单可存读档 + 按揭买房/还贷 + 升职/跳槽。
 
-跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **75 个全绿**。
+跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **76 个全绿**。
 
 ## 类型
 
@@ -64,7 +64,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 ## 文档
 
 - 设计文档（spec）：[docs/specs/2026-05-23-sg-life-sim-design.md](docs/specs/2026-05-23-sg-life-sim-design.md)
-- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）· [Plan 12 代码驱动 NPC 入世](docs/plans/2026-05-24-world-population.md)（✅）· [Plan 13 人生目标主线](docs/plans/2026-05-24-life-milestones.md)（✅）· [Plan 14 第一人称改造](docs/decisions/2026-05-24-first-person-horror-pivot.md)（✅）· [Plan 15 恐怖事件层](docs/plans/2026-05-24-horror-event-layer.md)（✅）· [Plan 16 理智系统](docs/plans/2026-05-24-sanity-system.md)（✅）· [Plan 17 理智恢复（拜拜）](docs/plans/2026-05-24-sanity-system.md)（✅）· [Plan 18 精神崩溃终局](docs/plans/2026-05-24-breakdown-ending.md)（✅）· [Plan 21 恐怖图鉴](docs/plans/2026-05-24-horror-codex.md)（✅）
+- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）· [Plan 12 代码驱动 NPC 入世](docs/plans/2026-05-24-world-population.md)（✅）· [Plan 13 人生目标主线](docs/plans/2026-05-24-life-milestones.md)（✅）· [Plan 14 第一人称改造](docs/decisions/2026-05-24-first-person-horror-pivot.md)（✅）· [Plan 15 恐怖事件层](docs/plans/2026-05-24-horror-event-layer.md)（✅）· [Plan 16 理智系统](docs/plans/2026-05-24-sanity-system.md)（✅）· [Plan 17 理智恢复（拜拜）](docs/plans/2026-05-24-sanity-system.md)（✅）· [Plan 18 精神崩溃终局](docs/plans/2026-05-24-breakdown-ending.md)（✅）· [Plan 21 恐怖图鉴](docs/plans/2026-05-24-horror-codex.md)（✅）· [Plan 22 恐怖共鸣对话](docs/plans/2026-05-24-horror-dialogue-resonance.md)（✅）
 - 决策记录：[docs/decisions/](docs/decisions/)
 
 ## 技术栈

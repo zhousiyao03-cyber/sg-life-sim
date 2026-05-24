@@ -1,6 +1,7 @@
 #include "Systems/SGDialogueContent.h"
 #include "Systems/SGAchievementIds.h"
 #include "Systems/ResidencyTypes.h"
+#include "Systems/HorrorEventTypes.h"
 
 namespace
 {
@@ -149,12 +150,18 @@ FDialogueTree SGDialogueContent::BuildUncleLimTree()
 	// 看了十几年的保安，最有七月的故事。（恐怖方向插入桥段）
 	FDialogueChoice Ghost = MakeChoice(TEXT("问 Uncle 这栋楼有没有什么『不干净』的事"), TEXT("ghost"));
 
+	// 恐怖共鸣（Plan 22）：玩家若真在电梯里碰到过空楼层，才能向 Uncle 坦白。
+	// 被一个信你的人郑重听见 —— 加好感 + 安抚回一点理智。
+	FDialogueChoice Confide = MakeChoice(TEXT("……Uncle，那个停在空楼层的电梯，我前几天真的碰到了"), TEXT("confide"));
+	Confide.Condition.Type = EDialogueConditionType::HasDiscoveredHorror;
+	Confide.Condition.Value = (int32)EHorrorEvent::ElevatorGhostFloor;
+
 	FDialogueTree Tree;
 	Tree.TreeId = Npc;
 	Tree.RootNodeId = TEXT("root");
 	Tree.Nodes = {
 		MakeNode(TEXT("root"), Speaker, TEXT("回来啦？今天加班到这么晚，辛苦咯。"),
-			{ Chat, Gossip, Kopi, Ghost, MakeEndChoice(TEXT("点头致意")) }),
+			{ Chat, Gossip, Kopi, Ghost, Confide, MakeEndChoice(TEXT("点头致意")) }),
 
 		MakeNode(TEXT("chat"), Speaker, TEXT("有什么事按门铃找我，叔叔在这看了十几年咯。"),
 			{ MakeEndChoice(TEXT("有劳 Uncle")) }),
@@ -170,6 +177,22 @@ FDialogueTree SGDialogueContent::BuildUncleLimTree()
 
 		MakeNode(TEXT("ghost2"), Speaker, TEXT("现在？七月你晚上回来，电梯要是自己停在 13 楼，记得——别进去，等下一趟。"),
 			{ MakeEndChoice(TEXT("……我记住了")) }),
+
+		MakeNode(TEXT("confide"), Speaker, TEXT("……我就知道。你眼神不对，我看了十几年门，看得出来。来，坐。叔叔信你，不是你疯了。"),
+			{ [Npc]() {
+				FDialogueChoice C = MakeEndChoice(TEXT("（被人信着，心里踏实了些）"));
+				// 一个选项目前只挂一个效果，这里取「安抚回理智」为主；好感在下面那条给。
+				C.Effect.Type = EDialogueEffectType::AddSanity;
+				C.Effect.Value = 12;
+				return C;
+			}(),
+			  [Npc]() {
+				FDialogueChoice C = MakeEndChoice(TEXT("谢谢 Uncle，真的"));
+				C.Effect.Type = EDialogueEffectType::AddAffinity;
+				C.Effect.Target = Npc;
+				C.Effect.Value = 6;
+				return C;
+			}() }),
 	};
 	return Tree;
 }

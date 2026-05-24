@@ -12,6 +12,7 @@ enum class EDialogueConditionType : uint8
 	MaxAffinity     UMETA(DisplayName = "好感≤"),
 	MinResidency    UMETA(DisplayName = "身份≥"),   // Value = EResidencyStatus 的 int 值
 	HasAchievement  UMETA(DisplayName = "已达成成就"),
+	HasDiscoveredHorror UMETA(DisplayName = "已亲历某都市传说"), // Value = EHorrorEvent 的 int 值
 };
 
 /** 选中选项后施加的效果类型。 */
@@ -22,6 +23,7 @@ enum class EDialogueEffectType : uint8
 	AddAffinity     UMETA(DisplayName = "加好感"),
 	AddMoneyCents   UMETA(DisplayName = "加钱(分)"),   // 可负 = 花钱
 	MarkAchievement UMETA(DisplayName = "解锁成就"),
+	AddSanity       UMETA(DisplayName = "回理智"),     // Value = 回多少理智（被理解后的安抚）
 	EndDialogue     UMETA(DisplayName = "结束对话"),
 };
 
