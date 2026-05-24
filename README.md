@@ -1,4 +1,4 @@
-# sg-life-sim
+# SGLifeSim
 
 新加坡人生模拟经营游戏。一个外来程序员在新加坡用五年时间证明自己的故事 —— 你在 CBD 写代码、在组屋区吃饭、在地铁里幻想、在房贷计算器前发呆，最后决定这座岛是不是你的家。
 
@@ -39,11 +39,14 @@
 ```bash
 # 1. 装 UE5.6.1 LTS + VS2022 + Git LFS
 # 2. clone
-git clone https://github.com/<your-user>/sg-life-sim.git
-cd sg-life-sim
+git clone https://github.com/<your-user>/sg-life-sim.git SGLifeSim
+cd SGLifeSim
 git lfs pull
 
 # 3. 双击 SGLifeSim.uproject 打开（首次编译约 5~10 分钟）
+
+# 注：GitHub repo 名是 sg-life-sim（kebab-case，仓库命名习惯），
+# 本地文件夹用 SGLifeSim（PascalCase，UE C++ 模块名规范）。
 ```
 
 ## 致谢

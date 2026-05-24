@@ -40,6 +40,9 @@ Thumbs.db
 # UE5 项目根目录的生成文件
 /SGLifeSim.sln
 
+# UE Developer 沙盒（每个开发者私有，不进版本控制）
+/Content/Developers/
+
 # 本地工具缓存
 /scripts/__pycache__/
 
