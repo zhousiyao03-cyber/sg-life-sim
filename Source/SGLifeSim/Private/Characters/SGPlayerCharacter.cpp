@@ -18,6 +18,7 @@
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/ProgressSubsystem.h"
+#include "Systems/DialogueSubsystem.h"
 #include "Systems/RelationshipSubsystem.h"
 #include "Systems/RelationshipTypes.h"
 #include "Systems/ResidencySubsystem.h"
@@ -26,6 +27,7 @@
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
+#include "UI/SGDialogueWidget.h"
 #include "UI/SGHudWidget.h"
 #include "UI/SGLocationMenuWidget.h"
 
@@ -216,29 +218,33 @@ void ASGPlayerCharacter::TryInteract()
 		return;
 	}
 
-	// 交互驱动系统：加好感 + 消耗能量（spec §5/§6）。
-	FText TierText;
 	UGameInstance* GI = GetGameInstance();
-	if (URelationshipSubsystem* Rel = GI ? GI->GetSubsystem<URelationshipSubsystem>() : nullptr)
-	{
-		Rel->AddAffinity(Npc->GetNpcId(), 5);
-		TierText = UEnum::GetDisplayValueAsText(Rel->GetTier(Npc->GetNpcId()));
-	}
+	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	// 交谈消耗能量（spec §5/§6）。好感不再在交互瞬间平加，改由对话选项效果决定。
 	if (UPlayerStateSubsystem* PS = GI ? GI->GetSubsystem<UPlayerStateSubsystem>() : nullptr)
 	{
 		PS->ModifyAttribute(EPlayerAttribute::Energy, -5);
 	}
 
-	// 台词 + 好感反馈显示在 HUD 对话气泡上，5 秒后自动消失。
+	// 若该 NPC 有注册的对话树 → 弹出对话界面（数据驱动，选项门控 + 效果）。
+	UDialogueSubsystem* Dialogue = GI ? GI->GetSubsystem<UDialogueSubsystem>() : nullptr;
+	if (Dialogue && PC)
+	{
+		if (!DialogueWidget)
+		{
+			DialogueWidget = CreateWidget<USGDialogueWidget>(PC, USGDialogueWidget::StaticClass());
+		}
+		if (DialogueWidget && DialogueWidget->OpenForTree(Npc->GetNpcId()))
+		{
+			return; // 成功开对话，台词/选项由对话界面接管
+		}
+	}
+
+	// 兜底：没有对话树（或开启失败）时，仍在 HUD 气泡显示一句台词，5 秒后消失。
 	if (HudWidget)
 	{
-		FText Bubble = Npc->GetDialogueDisplayText();
-		if (!TierText.IsEmpty())
-		{
-			Bubble = FText::FromString(FString::Printf(TEXT("%s\n（好感 +5 · 当前：%s）"),
-				*Bubble.ToString(), *TierText.ToString()));
-		}
-		HudWidget->SetDialogueText(Bubble);
+		HudWidget->SetDialogueText(Npc->GetDialogueDisplayText());
 		FTimerDelegate ClearDel = FTimerDelegate::CreateLambda([this]()
 		{
 			if (HudWidget)
