@@ -1,6 +1,6 @@
 # Plan 5: Dialogue Engine 实施计划
 
-> **状态：** 进行中（2026-05-24 起草并开始实现）
+> **状态：** ✅ 完成（2026-05-24 起草并当天实现完毕，Task 1–3）
 > **前置：** Plan 1–4 ✅（系统 + 可玩循环 + 进阶/终局都已就绪）
 > **关联 spec：** docs/specs/2026-05-23-sg-life-sim-design.md §6.3（关系/对话）
 > **关联 plan：** [Plan 2](2026-05-24-core-systems-skeleton.md)（曾推迟「完整对话树 DialogueSystem」到后续 plan）
@@ -34,3 +34,21 @@
 ## Definition of Done
 
 对话树引擎有数据结构 + 运行时 + 条件门控 + 效果应用 + Subsystem 薄壳 + 单元/集成测试，且接通 relationship/economy/progress。全套测试保持全绿。对话 UI、正式文案、NPC 交互流程改造留「对话 UI」plan。
+
+---
+
+## 完成情况（2026-05-24）
+
+全部 3 个 Task 完成，**全套 44 个 AutomationTest 全绿**。
+
+| Task | 产出 | 测试 |
+|---|---|---|
+| 1 | `SGDialogueTypes.h`（条件/效果/选项/节点/树）+ `FDialogueSystem`（导航/条件过滤/效果产出） | `SGLifeSim.Dialogue.*` ×4 |
+| 2 | `UDialogueSubsystem`（注册表 + 求值器接 relationship/residency/progress + 效果接 relationship/economy/progress）+ AhHua 示例树 | （集成覆盖） |
+| 3 | `Integration.DialogueAffinityUnlock`（送礼加好感→好感达 50「交心」分支解锁） | ×1 |
+
+**坑：UHT 头文件名全局唯一** —— `DialogueTypes.h` 撞引擎 `Sound/DialogueTypes.h`，改名 `SGDialogueTypes.h`。带 `.generated.h` 的头要避开引擎已有名（加 SG 前缀最稳）。
+
+**设计要点：** 条件/效果是纯数据；核心用注入的 `TFunctionRef` 求值器过滤选项、把选中项效果**返回**给 Subsystem 应用 —— 核心零系统依赖、可 lambda 单测。`ChooseOption(visibleIndex)` 每次重算可见选项再映射到原始下标，避免门控变化导致错位。
+
+**留后续（对话 UI plan）：** 选项的 UMG 界面、E 交互改为开对话树、正式文案、把对话访问 flag 进存档。
