@@ -25,6 +25,13 @@ void UWeaponSubsystem::Reload()
 	OnWeaponChanged.Broadcast(CurrentWeapon, AmmoInMag, GetMagSize());
 }
 
+void UWeaponSubsystem::RestoreFromSave(EWeaponKind Kind, int32 InAmmoInMag)
+{
+	CurrentWeapon = Kind;
+	AmmoInMag = FMath::Clamp(InAmmoInMag, 0, FWeaponSystem::GetDef(Kind).MagSize);
+	OnWeaponChanged.Broadcast(CurrentWeapon, AmmoInMag, GetMagSize());
+}
+
 bool UWeaponSubsystem::TryFire(int32& OutDamage, float& OutRange, int32& OutWantedPerShot)
 {
 	OutDamage = 0; OutRange = 0.f; OutWantedPerShot = 0;

@@ -40,6 +40,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Weapon")
 	void Reload();
 
+	/** 读档恢复武器与弹匣。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Weapon")
+	void RestoreFromSave(EWeaponKind Kind, int32 InAmmoInMag);
+
 	/**
 	 * 扣动扳机：能开火则消耗一发并返回 true（玩家角色据此做射线+命中伤害）；
 	 * 没枪或弹匣空返回 false。OutDamage 填本枪每发伤害，OutRange 填射程。

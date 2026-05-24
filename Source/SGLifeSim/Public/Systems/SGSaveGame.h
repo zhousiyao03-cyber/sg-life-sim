@@ -101,4 +101,22 @@ public:
 	// --- Horror Codex（Plan 21，恐怖图鉴 bitmask） ---
 	UPROPERTY()
 	int64 DiscoveredHorrors = 0;
+
+	// --- GTA 块（通缉/血量/武器/天气） ---
+	UPROPERTY()
+	int32 WantedHeat = 0;
+
+	UPROPERTY()
+	int32 PlayerHealth = 100;
+
+	/** 当前武器（EWeaponKind 的 uint8）+ 弹匣余弹。 */
+	UPROPERTY()
+	uint8 WeaponKind = 0;
+
+	UPROPERTY()
+	int32 WeaponAmmoInMag = 0;
+
+	/** 当前天气（EWeather 的 uint8）。 */
+	UPROPERTY()
+	uint8 Weather = 0;
 };

@@ -29,6 +29,13 @@ bool FSaveGameRoundTripTest::RunTest(const FString& Parameters)
 	Save->Affinities.Add(TEXT("Auntie"), 55);
 	Save->PlayerAttributes = { 80, 60, 100, 60, 40, 30 };
 
+	// GTA 块状态。
+	Save->WantedHeat = 230;       // 2 星
+	Save->PlayerHealth = 47;
+	Save->WeaponKind = 1;         // 手枪
+	Save->WeaponAmmoInMag = 8;
+	Save->Weather = 2;            // 雨
+
 	// 2) 写盘
 	TestTrue(TEXT("SaveGameToSlot succeeds"), UGameplayStatics::SaveGameToSlot(Save, Slot, 0));
 	TestTrue(TEXT("slot now exists"), UGameplayStatics::DoesSaveGameExist(Slot, 0));
@@ -50,6 +57,13 @@ bool FSaveGameRoundTripTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("affinity survives"), Loaded->Affinities.FindRef(TEXT("Auntie")), 55);
 	TestEqual(TEXT("player attrs count"), Loaded->PlayerAttributes.Num(), 6);
 	TestEqual(TEXT("energy attr survives"), Loaded->PlayerAttributes[2], 100);
+
+	// GTA 块状态存活。
+	TestEqual(TEXT("wanted heat survives"), Loaded->WantedHeat, 230);
+	TestEqual(TEXT("health survives"), Loaded->PlayerHealth, 47);
+	TestEqual(TEXT("weapon kind survives"), (int32)Loaded->WeaponKind, 1);
+	TestEqual(TEXT("ammo survives"), Loaded->WeaponAmmoInMag, 8);
+	TestEqual(TEXT("weather survives"), (int32)Loaded->Weather, 2);
 
 	// 5) 清理
 	UGameplayStatics::DeleteGameInSlot(Slot, 0);

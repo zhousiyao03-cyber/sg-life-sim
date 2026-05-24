@@ -11,6 +11,12 @@
 #include "Systems/EndingSubsystem.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/HorrorCodexSubsystem.h"
+#include "Systems/WantedSubsystem.h"
+#include "Systems/PlayerVitalsSubsystem.h"
+#include "Systems/WeaponSubsystem.h"
+#include "Systems/WeaponTypes.h"
+#include "Systems/WeatherSubsystem.h"
+#include "Systems/WeatherTypes.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString USaveGameSubsystem::DefaultSlot = TEXT("SGLifeSim_Slot0");
@@ -77,6 +83,24 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 	{
 		Save.DiscoveredHorrors = Codex->GetMaskForSave();
 	}
+	// GTA 块状态。
+	if (const UWantedSubsystem* Wanted = GI->GetSubsystem<UWantedSubsystem>())
+	{
+		Save.WantedHeat = Wanted->GetHeat();
+	}
+	if (const UPlayerVitalsSubsystem* Vitals = GI->GetSubsystem<UPlayerVitalsSubsystem>())
+	{
+		Save.PlayerHealth = Vitals->GetHealth();
+	}
+	if (const UWeaponSubsystem* Weapon = GI->GetSubsystem<UWeaponSubsystem>())
+	{
+		Save.WeaponKind = (uint8)Weapon->GetWeapon();
+		Save.WeaponAmmoInMag = Weapon->GetAmmoInMag();
+	}
+	if (const UWeatherSubsystem* WeatherSys = GI->GetSubsystem<UWeatherSubsystem>())
+	{
+		Save.Weather = (uint8)WeatherSys->GetWeather();
+	}
 }
 
 void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
@@ -133,6 +157,23 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	if (UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
 	{
 		Codex->RestoreFromSave(Save.DiscoveredHorrors);
+	}
+	// GTA 块状态。
+	if (UWantedSubsystem* Wanted = GI->GetSubsystem<UWantedSubsystem>())
+	{
+		Wanted->RestoreFromSave(Save.WantedHeat);
+	}
+	if (UPlayerVitalsSubsystem* Vitals = GI->GetSubsystem<UPlayerVitalsSubsystem>())
+	{
+		Vitals->SetHealth(Save.PlayerHealth);
+	}
+	if (UWeaponSubsystem* Weapon = GI->GetSubsystem<UWeaponSubsystem>())
+	{
+		Weapon->RestoreFromSave((EWeaponKind)Save.WeaponKind, Save.WeaponAmmoInMag);
+	}
+	if (UWeatherSubsystem* WeatherSys = GI->GetSubsystem<UWeatherSubsystem>())
+	{
+		WeatherSys->SetWeather((EWeather)Save.Weather);
 	}
 }
 

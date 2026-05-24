@@ -34,6 +34,13 @@ void UWantedSubsystem::Decay(int32 Amount)
 	BroadcastIfChanged(Old);
 }
 
+void UWantedSubsystem::RestoreFromSave(int32 InHeat)
+{
+	const int32 Old = GetStars();
+	Heat = FMath::Clamp(InHeat, 0, MaxHeat);
+	BroadcastIfChanged(Old);
+}
+
 void UWantedSubsystem::BroadcastIfChanged(int32 OldStars)
 {
 	const int32 NewStars = GetStars();

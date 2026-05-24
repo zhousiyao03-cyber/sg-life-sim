@@ -39,6 +39,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Wanted")
 	void Decay(int32 Amount);
 
+	/** 读档恢复通缉值。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Wanted")
+	void RestoreFromSave(int32 InHeat);
+
 	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Wanted")
 	FOnWantedChanged OnWantedChanged;
 
