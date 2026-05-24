@@ -89,6 +89,10 @@ private:
 	UFUNCTION()
 	void HandleAchievementUnlocked(FName AchievementId);
 
+	/** 绑定到 UEconomicEventSubsystem::OnEconomicEvent，弹 HUD toast。 */
+	UFUNCTION()
+	void HandleEconomicEvent(FText Title);
+
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimSequence> CurrentAnim;

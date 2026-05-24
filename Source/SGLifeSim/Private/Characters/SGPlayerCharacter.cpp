@@ -25,6 +25,7 @@
 #include "Systems/AssetsSubsystem.h"
 #include "Systems/CareerSubsystem.h"
 #include "Systems/CareerTypes.h"
+#include "Systems/EconomicEventSubsystem.h"
 #include "Systems/EndingSubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -111,6 +112,10 @@ void ASGPlayerCharacter::BeginPlay()
 		if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
 		{
 			Prog->OnAchievementUnlocked.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleAchievementUnlocked);
+		}
+		if (UEconomicEventSubsystem* Events = GI->GetSubsystem<UEconomicEventSubsystem>())
+		{
+			Events->OnEconomicEvent.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleEconomicEvent);
 		}
 	}
 
@@ -264,6 +269,15 @@ void ASGPlayerCharacter::HandleAchievementUnlocked(FName AchievementId)
 	{
 		HudWidget->ShowAchievementToast(FText::FromString(
 			FString::Printf(TEXT("🏆 成就解锁：%s"), *AchievementId.ToString())));
+	}
+}
+
+void ASGPlayerCharacter::HandleEconomicEvent(FText Title)
+{
+	if (HudWidget && !Title.IsEmpty())
+	{
+		HudWidget->ShowAchievementToast(FText::FromString(
+			FString::Printf(TEXT("📰 %s"), *Title.ToString())), 5.f);
 	}
 }
 
