@@ -24,6 +24,9 @@ public:
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
+	/** 「Speaker：Line」格式的整句，供玩家 HUD 对话气泡显示。 */
+	FText GetDialogueDisplayText() const;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|NPC")
 	TObjectPtr<USkeletalMeshComponent> NpcMesh;

@@ -22,19 +22,19 @@ ASGInteractableNPC::ASGInteractableNPC()
 
 void ASGInteractableNPC::OnInteract_Implementation(AActor* Interactor)
 {
-	// 原型：用屏幕文本显示对话（替代 UMG 对话框，受当前工具链限制）。
+	// 交互事件本身在这里记日志（gameplay 钩子）；台词的显示交给玩家的 HUD
+	// 对话气泡（ASGPlayerCharacter 持有 UMG widget），见 GetDialogueDisplayText。
 	UE_LOG(LogTemp, Log, TEXT("[NPC] %s: %s"),
 		*SpeakerName.ToString(), *DialogueLine.ToString());
-	if (GEngine)
-	{
-		const FString Line = FString::Printf(TEXT("%s：%s"),
-			*SpeakerName.ToString(), *DialogueLine.ToString());
-		// Key=2 固定槽，重复交互刷新同一行；显示 5 秒
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Yellow, Line);
-	}
 }
 
 FText ASGInteractableNPC::GetInteractionPrompt_Implementation() const
 {
 	return FText::FromString(TEXT("[E] 对话"));
+}
+
+FText ASGInteractableNPC::GetDialogueDisplayText() const
+{
+	return FText::FromString(FString::Printf(TEXT("%s：%s"),
+		*SpeakerName.ToString(), *DialogueLine.ToString()));
 }

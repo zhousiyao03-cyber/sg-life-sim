@@ -15,6 +15,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
+#include "TimerManager.h"
+#include "UI/SGHudWidget.h"
 
 ASGPlayerCharacter::ASGPlayerCharacter()
 {
@@ -54,7 +56,7 @@ void ASGPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (const APlayerController* PC = Cast<APlayerController>(GetController()))
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (ULocalPlayer* LP = PC->GetLocalPlayer())
 		{
@@ -66,6 +68,13 @@ void ASGPlayerCharacter::BeginPlay()
 					Subsystem->AddMappingContext(DefaultMappingContext, 0);
 				}
 			}
+		}
+
+		// 原型 HUD：纯 C++ UMG，无需 BP widget 资产
+		HudWidget = CreateWidget<USGHudWidget>(PC, USGHudWidget::StaticClass());
+		if (HudWidget)
+		{
+			HudWidget->AddToViewport();
 		}
 	}
 
@@ -165,10 +174,23 @@ void ASGPlayerCharacter::TryInteract()
 	if (Nearest && Nearest->Implements<UInteractableInterface>())
 	{
 		IInteractableInterface::Execute_OnInteract(Nearest, this);
-	}
-	else if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Silver, TEXT("附近没有可交互的人"));
+
+		// 台词显示在 HUD 对话气泡上，5 秒后自动消失
+		if (HudWidget)
+		{
+			if (const ASGInteractableNPC* Npc = Cast<ASGInteractableNPC>(Nearest))
+			{
+				HudWidget->SetDialogueText(Npc->GetDialogueDisplayText());
+				FTimerDelegate ClearDel = FTimerDelegate::CreateLambda([this]()
+				{
+					if (HudWidget)
+					{
+						HudWidget->SetDialogueText(FText::GetEmpty());
+					}
+				});
+				GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 5.f, /*bLoop=*/false);
+			}
+		}
 	}
 }
 
@@ -200,31 +222,30 @@ void ASGPlayerCharacter::SwitchLocation()
 
 void ASGPlayerCharacter::DrawPrototypeHUD()
 {
-	if (!GEngine)
+	if (!HudWidget)
 	{
 		return;
 	}
+
 	UGameInstance* GI = GetGameInstance();
-	UTimeSubsystem* TimeSys = GI ? GI->GetSubsystem<UTimeSubsystem>() : nullptr;
-	if (!TimeSys)
+	if (UTimeSubsystem* TimeSys = GI ? GI->GetSubsystem<UTimeSubsystem>() : nullptr)
 	{
-		return;
+		const FText BlockText = UEnum::GetDisplayValueAsText(TimeSys->GetCurrentBlock());
+		const FText WeekdayText = UEnum::GetDisplayValueAsText(TimeSys->GetWeekday());
+		HudWidget->SetStatusText(FText::FromString(FString::Printf(
+			TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 切换地点"),
+			TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString())));
 	}
 
-	const FText BlockText = UEnum::GetDisplayValueAsText(TimeSys->GetCurrentBlock());
-	const FText WeekdayText = UEnum::GetDisplayValueAsText(TimeSys->GetWeekday());
-	const FString Hud = FString::Printf(TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 切换地点"),
-		TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString());
-
-	// 固定 Key=1 让这行原地刷新而不是堆叠
-	GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Hud);
-
-	// 靠近可交互对象时显示其提示（如「[E] 对话」），Key=3 原地刷新
+	// 靠近可交互对象时显示其提示（如「[E] 对话」），否则隐藏
 	AActor* Nearby = FindNearbyInteractable();
 	if (Nearby && Nearby->Implements<UInteractableInterface>())
 	{
-		const FText Prompt = IInteractableInterface::Execute_GetInteractionPrompt(Nearby);
-		GEngine->AddOnScreenDebugMessage(3, 0.f, FColor::Green, Prompt.ToString());
+		HudWidget->SetPromptText(IInteractableInterface::Execute_GetInteractionPrompt(Nearby));
+	}
+	else
+	{
+		HudWidget->SetPromptText(FText::GetEmpty());
 	}
 }
 
