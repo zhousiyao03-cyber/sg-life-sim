@@ -93,6 +93,9 @@ TSharedRef<SWidget> USGActivityMenuWidget::RebuildWidget()
 		ActivityButtons[3]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity3);
 		ActivityButtons[4]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity4);
 		ActivityButtons[5]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity5);
+		ActivityButtons[6]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity6);
+		ActivityButtons[7]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity7);
+		ActivityButtons[8]->OnClicked.AddDynamic(this, &USGActivityMenuWidget::OnActivity8);
 
 		StatusText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("StatusText"));
 		StatusText->SetJustification(ETextJustify::Center);
@@ -218,6 +221,9 @@ void USGActivityMenuWidget::OnActivity2() { Choose(2); }
 void USGActivityMenuWidget::OnActivity3() { Choose(3); }
 void USGActivityMenuWidget::OnActivity4() { Choose(4); }
 void USGActivityMenuWidget::OnActivity5() { Choose(5); }
+void USGActivityMenuWidget::OnActivity6() { Choose(6); }
+void USGActivityMenuWidget::OnActivity7() { Choose(7); }
+void USGActivityMenuWidget::OnActivity8() { Choose(8); }
 
 void USGActivityMenuWidget::OnCloseClicked()
 {

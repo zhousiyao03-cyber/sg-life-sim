@@ -60,6 +60,13 @@ bool FLocationRegistryTest::RunTest(const FString& Parameters)
 
 		const FLocationDef Hawker = FLocationRegistry::GetLocationDef(ELocation::Hawker);
 		TestTrue(TEXT("hawker can eat"), Hawker.Activities.Contains(EActivityType::EatHawker));
+
+		// 公司能上班、商场能购物（新地点专属活动）。
+		const FLocationDef Office = FLocationRegistry::GetLocationDef(ELocation::Office);
+		TestTrue(TEXT("office can work shift"), Office.Activities.Contains(EActivityType::WorkShift));
+
+		const FLocationDef Mall = FLocationRegistry::GetLocationDef(ELocation::Mall);
+		TestTrue(TEXT("mall can shop"), Mall.Activities.Contains(EActivityType::Shopping));
 	}
 
 	// 关卡名 → 地点匹配（含 PIE 前缀）。

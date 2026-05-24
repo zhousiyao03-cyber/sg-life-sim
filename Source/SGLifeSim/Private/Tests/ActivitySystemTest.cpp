@@ -28,6 +28,20 @@ bool FActivityDefsTest::RunTest(const FString& Parameters)
 
 	const FActivityDef Eat = FActivitySystem::GetActivityDef(EActivityType::EatHawker);
 	TestEqual(TEXT("eat costs $5"), Eat.CashDeltaCents, (int64)-500);
+
+	// 上班（公司主业）：领薪 $500、涨专业、耗时 2 块、累、略掉心情。
+	const FActivityDef Work = FActivitySystem::GetActivityDef(EActivityType::WorkShift);
+	TestEqual(TEXT("work pays $500"), Work.CashDeltaCents, (int64)50000);
+	TestEqual(TEXT("work 2 blocks"), Work.TimeBlocks, 2);
+	TestTrue(TEXT("work raises professional"), Work.GetAttr(EPlayerAttribute::Professional) > 0);
+	TestTrue(TEXT("work drains energy"), Work.GetAttr(EPlayerAttribute::Energy) < 0);
+	TestTrue(TEXT("work pays more than freelance"), Work.CashDeltaCents > Code.CashDeltaCents);
+
+	// 逛街购物（商场）：花钱回心情、涨社交、不赚钱。
+	const FActivityDef Shop = FActivitySystem::GetActivityDef(EActivityType::Shopping);
+	TestTrue(TEXT("shopping costs money"), Shop.CashDeltaCents < 0);
+	TestTrue(TEXT("shopping lifts mood"), Shop.GetAttr(EPlayerAttribute::Mood) > 0);
+	TestTrue(TEXT("shopping raises social"), Shop.GetAttr(EPlayerAttribute::Social) > 0);
 	return true;
 }
 

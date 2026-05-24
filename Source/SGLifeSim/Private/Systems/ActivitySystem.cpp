@@ -74,6 +74,26 @@ FActivityDef FActivitySystem::GetActivityDef(EActivityType Activity)
 		Def.CashDeltaCents = -200; // 香火/供品 -$2
 		break;
 
+	case EActivityType::WorkShift:
+		// 上班（公司）：主业收入，比接私活赚得多、涨专业，但耗时长、累、略掉心情（打工人）。
+		Def.Title = NSLOCTEXT("SGActivity", "Work", "上班（领薪 $500）");
+		Def.TimeBlocks = 2;
+		SetDelta(Def, EPlayerAttribute::Professional, 3);
+		SetDelta(Def, EPlayerAttribute::Energy, -30);
+		SetDelta(Def, EPlayerAttribute::Mood, -3);
+		Def.CashDeltaCents = 50000; // +$500
+		break;
+
+	case EActivityType::Shopping:
+		// 逛街购物（商场）：花钱买开心，回心情、涨社交，不赚钱、略耗精力。
+		Def.Title = NSLOCTEXT("SGActivity", "Shopping", "逛街购物（花 $80 买开心）");
+		Def.TimeBlocks = 1;
+		SetDelta(Def, EPlayerAttribute::Mood, 10);
+		SetDelta(Def, EPlayerAttribute::Social, 2);
+		SetDelta(Def, EPlayerAttribute::Energy, -8);
+		Def.CashDeltaCents = -8000; // -$80
+		break;
+
 	default:
 		break;
 	}

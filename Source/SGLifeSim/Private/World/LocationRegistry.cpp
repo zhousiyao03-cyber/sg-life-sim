@@ -24,8 +24,8 @@ FLocationDef FLocationRegistry::GetLocationDef(ELocation Location)
 		D.LevelName = FName(TEXT("L_Office"));
 		D.DisplayName = FText::FromString(TEXT("公司"));
 		D.CityLocation = FVector(1600.f, 800.f, 0.f);
-		// 上班暂用「接私活」代表伏案工作；专门的「上班」活动留后续。
-		D.Activities = { EActivityType::FreelanceCode };
+		// 公司：上班领薪（主业）+ 加班接私活。
+		D.Activities = { EActivityType::WorkShift, EActivityType::FreelanceCode };
 		break;
 
 	case ELocation::Corridor:
@@ -47,8 +47,8 @@ FLocationDef FLocationRegistry::GetLocationDef(ELocation Location)
 		D.LevelName = FName(TEXT("L_Mall"));
 		D.DisplayName = FText::FromString(TEXT("商场"));
 		D.CityLocation = FVector(1800.f, -400.f, 0.f);
-		// 购物 / 消费活动留后续；先放「吃饭」（美食广场）。
-		D.Activities = { EActivityType::EatHawker };
+		// 商场：逛街购物 + 美食广场吃饭。
+		D.Activities = { EActivityType::Shopping, EActivityType::EatHawker };
 		break;
 
 	case ELocation::None:

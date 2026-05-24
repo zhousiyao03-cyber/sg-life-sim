@@ -46,6 +46,9 @@ private:
 	UFUNCTION() void OnActivity3();
 	UFUNCTION() void OnActivity4();
 	UFUNCTION() void OnActivity5();
+	UFUNCTION() void OnActivity6();
+	UFUNCTION() void OnActivity7();
+	UFUNCTION() void OnActivity8();
 
 	UFUNCTION() void OnCloseClicked();
 

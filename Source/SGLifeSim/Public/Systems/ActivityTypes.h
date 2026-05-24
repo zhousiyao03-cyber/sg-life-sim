@@ -15,6 +15,8 @@ enum class EActivityType : uint8
 	EatHawker    UMETA(DisplayName = "食阁吃饭"),
 	Gossip       UMETA(DisplayName = "听八卦"),
 	PrayPuja     UMETA(DisplayName = "拜拜祈福"),
+	WorkShift    UMETA(DisplayName = "上班"),
+	Shopping     UMETA(DisplayName = "逛街购物"),
 
 	Count        UMETA(Hidden)
 };
