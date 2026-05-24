@@ -33,9 +33,15 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 | 进度 | `FProgressSystem` / `UProgressSubsystem` | 软成就去重追踪 + 首解锁委托 |
 | 关系 | `FRelationshipSystem` / `URelationshipSubsystem` | NPC 好感 0~100 + 六档关系等级（陌生→恋人） |
 | 主角 | `FPlayerStats` / `UPlayerStateSubsystem` | 健康/心情/能量/专业/社交/见识 0~100，能量每日恢复 |
-| 存档 | `USGSaveGame` / `USaveGameSubsystem` | 聚合五系统状态，`SaveGameToSlot`/`LoadGameFromSlot` |
+| 进度 | `FProgressSystem` / `UProgressSubsystem` + `UAchievementDirector` | 软成就追踪；Director 订阅经济/关系自动解锁 |
+| 身份 | `FResidencySystem` / `UResidencySubsystem` | EP/SP→申请PR→PR→公民 状态机（含被拒退回） |
+| 资产 | `FAssetsSystem` / `UAssetsSubsystem` | 房/车 tier + 投资（月度复利回报），买卖经经济扣款 |
+| 终局 | `FEndingEvaluator` / `UEndingSubsystem` | spec §6.5 四软终局（扎根/兑现/心碎/漂着）评估 + 主动选择 |
+| 存档 | `USGSaveGame` / `USaveGameSubsystem` | 聚合全部系统状态，`SaveGameToSlot`/`LoadGameFromSlot` |
 
-跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`）。
+玩家操作已接入系统（Plan 3/4）：交互 NPC 加好感+耗能量、推时间触发月度发薪/账单/投资回报、HUD 实时显示钱包/属性/身份/住房/终局倾向、菜单可存读档。
+
+跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **39 个全绿**。
 
 ## 类型
 
@@ -48,7 +54,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 ## 文档
 
 - 设计文档（spec）：[docs/specs/2026-05-23-sg-life-sim-design.md](docs/specs/2026-05-23-sg-life-sim-design.md)
-- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）
+- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）
 - 决策记录：[docs/decisions/](docs/decisions/)
 
 ## 技术栈

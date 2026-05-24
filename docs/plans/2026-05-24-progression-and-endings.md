@@ -1,6 +1,6 @@
 # Plan 4: Progression & Endings 实施计划
 
-> **状态：** 进行中（2026-05-24 起草并开始实现）
+> **状态：** ✅ 完成（2026-05-24 起草并当天实现完毕，Task 1–6）
 > **前置：** Plan 1 可玩竖切片 ✅ · Plan 2 核心系统骨架 ✅ · Plan 3 系统接入可玩循环 ✅
 > **关联 spec：** docs/specs/2026-05-23-sg-life-sim-design.md §5.1（阶级跃迁）, §6.4（资产/身份）, §6.5（终局）
 > **关联 plan：** [Plan 2](2026-05-24-core-systems-skeleton.md) · [Plan 3](2026-05-24-gameplay-integration.md)
@@ -44,3 +44,24 @@ spec §6.5。`EEnding`（None/Rooted/CashOut/Heartbreak/Adrift）。`FEndingEval
 ## Definition of Done
 
 身份阶梯、资产（房/车/投资 + 月度回报）、四软终局评估都有 C++ 骨架 + 单元测试 + Subsystem 薄壳 + 存档；一条「买房+PR+关系→扎根」链路在 headless 集成测试验证通过；HUD 能看到身份/房产/终局倾向。全套测试保持全绿。对话树/剧情/平衡/美化留后续 plan。
+
+---
+
+## 完成情况（2026-05-24）
+
+全部 6 个 Task 当天完成，**全套 39 个 AutomationTest 全绿**（含三条 `InitializeStandalone` 集成测试）。
+
+| Task | 内容 | 产出 | 测试 |
+|---|---|---|---|
+| 1 | ResidencySystem 身份阶梯 | `ResidencyTypes.h` / `ResidencySystem.{h,cpp}` | `SGLifeSim.Residency.*` ×4 |
+| 2 | AssetsSystem 房/车/投资 | `AssetsTypes.h` / `AssetsSystem.{h,cpp}` | `SGLifeSim.Assets.*` ×4 |
+| 3 | Residency/Assets 薄壳 + economy/time 接线 | `UResidencySubsystem` / `UAssetsSubsystem` | （集成测试覆盖） |
+| 4 | EndingSystem 四软终局 | `EndingTypes.h` / `EndingEvaluator.{h,cpp}` / `UEndingSubsystem` | `SGLifeSim.Ending.*` ×4 |
+| 5 | 接存档 + HUD + 集成 | `USGSaveGame` 扩字段；HUD 进阶行 | `Integration.ProgressionRootedAndSave` |
+| 6 | 文档/README/记忆 | 本节 + README + memory | — |
+
+**关键设计落点 / 偏差：**
+- 金额仍以「分」存。投资月度回报走千分比复利（默认 +0.5%/月），与 Economy 月结同节奏（都订阅 `TimeSubsystem.OnTimeAdvanced`，各自跟踪 LastMonth）。
+- 大额购买（房/车）经 `UEconomySubsystem::TryWithdraw` 从**现金**扣款（不足则买不成）——按揭/CPF/贷款融资是后续 plan，骨架先用现金 + tier 估值表。
+- 终局评估是**纯函数** `FEndingEvaluator::EvaluateLeaning(身份, 有房, 最高好感, 净资产, PR被拒次数)`，判定顺序 心碎 > 扎根 > 兑现 > 漂着；`UEndingSubsystem` 读四个子系统状态喂进去，与各系统零耦合。净资产 = 经济净资产 + 资产估值贡献（房/车/投资），现金花在房上即从经济侧扣掉、不重复计。
+- **unity build 坑**：多个测试文件在匿名命名空间各自定义同名 `Dollars` 辅助函数，UBT 合并进同一 unity TU 时 ODR 冲突 → 给新文件的辅助函数改唯一名（`EEDollars`/`PIDollars`）。
