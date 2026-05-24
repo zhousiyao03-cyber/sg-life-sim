@@ -204,10 +204,16 @@ void ASGPlayerCharacter::UpdateLocomotionAnimation()
 		Walk = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Characters/Player/Animations/A_Walk.A_Walk"));
 	}
 
-	// 只看水平速度，竖直分量（落地/跳跃）不算「走」
-	const float HorizontalSpeed = GetVelocity().Size2D();
-	const float Threshold = (WalkSpeedThreshold > 0.f) ? WalkSpeedThreshold : 10.f;
-	UAnimSequence* DesiredAnim = (HorizontalSpeed > Threshold) ? Walk : Idle;
+	// 占位走路动画 A_Walk（Mixamo 骨架）循环首尾帧不连续，bLooping 硬跳回首帧导致
+	// 「走着走着抽一下/像后退」。引擎自带走路动画是 UE5 Manny 骨架，骨名不同套不上，
+	// 重定向又是给占位资产做的工序——故占位阶段一律播 Idle（走路时滑步前进，不抽动）。
+	// 等换上真角色 + 干净走路循环（或做了 IK Retarget）后，恢复下面注释掉的按速切换。
+	//
+	//   const float HorizontalSpeed = GetVelocity().Size2D();
+	//   const float Threshold = (WalkSpeedThreshold > 0.f) ? WalkSpeedThreshold : 10.f;
+	//   UAnimSequence* DesiredAnim = (HorizontalSpeed > Threshold) ? Walk : Idle;
+	(void)Walk; // 暂不使用，避免 unused 警告；保留加载逻辑以便恢复
+	UAnimSequence* DesiredAnim = Idle;
 
 	if (DesiredAnim && DesiredAnim != CurrentAnim)
 	{
