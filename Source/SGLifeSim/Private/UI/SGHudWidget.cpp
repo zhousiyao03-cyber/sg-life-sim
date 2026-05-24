@@ -26,6 +26,13 @@ namespace
 
 TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 {
+	// 纯 native UUserWidget（无 BP 模板）经 CreateWidget 创建时 WidgetTree 可能为空，
+	// 这里兜底建一个，否则下面构造控件树会被跳过、整张 HUD 不渲染。
+	if (!WidgetTree)
+	{
+		WidgetTree = NewObject<UWidgetTree>(this, TEXT("WidgetTree"));
+	}
+
 	UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
 	if (!RootCanvas && WidgetTree)
 	{
