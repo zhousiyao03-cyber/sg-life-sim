@@ -50,6 +50,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Time")
 	FOnTimeAdvanced OnTimeAdvanced;
 
+	/** 直接访问内部纯 C++ 系统（供存档用，不暴露给 BP）。 */
+	FTimeSystem& GetTime() { return Time; }
+	const FTimeSystem& GetTime() const { return Time; }
+
 private:
 	FTimeSystem Time;
 };

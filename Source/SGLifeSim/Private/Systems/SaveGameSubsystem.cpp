@@ -1,0 +1,108 @@
+#include "Systems/SaveGameSubsystem.h"
+#include "Systems/SGSaveGame.h"
+#include "Systems/TimeSubsystem.h"
+#include "Systems/EconomySubsystem.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/RelationshipSubsystem.h"
+#include "Systems/PlayerStateSubsystem.h"
+#include "Kismet/GameplayStatics.h"
+
+const FString USaveGameSubsystem::DefaultSlot = TEXT("SGLifeSim_Slot0");
+
+void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
+{
+	const UGameInstance* GI = GetGameInstance();
+	if (!GI)
+	{
+		return;
+	}
+
+	if (const UTimeSubsystem* Time = GI->GetSubsystem<UTimeSubsystem>())
+	{
+		Save.TimeTotalBlocks = Time->GetTime().GetTotalBlocks();
+	}
+	if (const UEconomySubsystem* Eco = GI->GetSubsystem<UEconomySubsystem>())
+	{
+		Save.EconomyBalances = Eco->GetEconomy().GetBalancesSnapshot();
+		Save.EconomyTransactions = Eco->GetEconomy().GetTransactions();
+	}
+	if (const UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
+	{
+		Save.Achievements = Prog->GetProgress().GetAchievedSet().Array();
+	}
+	if (const URelationshipSubsystem* Rel = GI->GetSubsystem<URelationshipSubsystem>())
+	{
+		Save.Affinities = Rel->GetRelationship().GetAllAffinities();
+	}
+	if (const UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
+	{
+		Save.PlayerAttributes = PS->GetStats().GetSnapshot();
+	}
+}
+
+void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
+{
+	UGameInstance* GI = GetGameInstance();
+	if (!GI)
+	{
+		return;
+	}
+
+	if (UTimeSubsystem* Time = GI->GetSubsystem<UTimeSubsystem>())
+	{
+		Time->GetTime().RestoreTotalBlocks(Save.TimeTotalBlocks);
+	}
+	if (UEconomySubsystem* Eco = GI->GetSubsystem<UEconomySubsystem>())
+	{
+		Eco->GetEconomy().RestoreBalances(Save.EconomyBalances);
+		Eco->GetEconomy().RestoreTransactions(Save.EconomyTransactions);
+	}
+	if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
+	{
+		Prog->GetProgress().RestoreAchieved(Save.Achievements);
+	}
+	if (URelationshipSubsystem* Rel = GI->GetSubsystem<URelationshipSubsystem>())
+	{
+		Rel->GetRelationship().RestoreAffinities(Save.Affinities);
+	}
+	if (UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
+	{
+		PS->GetStats().RestoreSnapshot(Save.PlayerAttributes);
+	}
+}
+
+bool USaveGameSubsystem::SaveToSlot(const FString& SlotName)
+{
+	USGSaveGame* Save = Cast<USGSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(USGSaveGame::StaticClass()));
+	if (!Save)
+	{
+		return false;
+	}
+
+	GatherInto(*Save);
+	Save->SavedAtUtc = FDateTime::UtcNow();
+	return UGameplayStatics::SaveGameToSlot(Save, SlotName, 0);
+}
+
+bool USaveGameSubsystem::LoadFromSlot(const FString& SlotName)
+{
+	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0))
+	{
+		return false;
+	}
+
+	USGSaveGame* Save = Cast<USGSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (!Save)
+	{
+		return false;
+	}
+
+	ApplyFrom(*Save);
+	return true;
+}
+
+bool USaveGameSubsystem::DoesSaveExist(const FString& SlotName) const
+{
+	return UGameplayStatics::DoesSaveGameExist(SlotName, 0);
+}

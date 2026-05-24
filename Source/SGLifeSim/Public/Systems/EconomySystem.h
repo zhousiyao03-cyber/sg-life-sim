@@ -47,6 +47,15 @@ public:
 	/** 交易流水（最新在末尾），存档 / UI 用。 */
 	const TArray<FMoneyTransaction>& GetTransactions() const { return Transactions; }
 
+	/** 各账户余额快照（存档用），索引 = (int32)ECurrencyAccount。 */
+	TArray<int64> GetBalancesSnapshot() const;
+
+	/** 从快照恢复余额（长度需为 Count，否则忽略）。 */
+	void RestoreBalances(const TArray<int64>& Snapshot);
+
+	/** 从存档恢复交易流水。 */
+	void RestoreTransactions(const TArray<FMoneyTransaction>& InTransactions) { Transactions = InTransactions; }
+
 	// CPF 费率常量（spec §6.2，公开供测试断言用）。
 	static constexpr int32 CpfEmployeePercent = 20;  // 雇员自付
 	static constexpr int32 CpfEmployerPercent = 17;  // 雇主额外

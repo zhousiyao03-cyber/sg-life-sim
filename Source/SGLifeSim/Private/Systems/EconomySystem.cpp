@@ -107,3 +107,26 @@ int64 FEconomySystem::GetNetWorth() const
 	}
 	return Sum;
 }
+
+TArray<int64> FEconomySystem::GetBalancesSnapshot() const
+{
+	TArray<int64> Out;
+	Out.Reserve((int32)ECurrencyAccount::Count);
+	for (int32 i = 0; i < (int32)ECurrencyAccount::Count; ++i)
+	{
+		Out.Add(Balances[i]);
+	}
+	return Out;
+}
+
+void FEconomySystem::RestoreBalances(const TArray<int64>& Snapshot)
+{
+	if (Snapshot.Num() != (int32)ECurrencyAccount::Count)
+	{
+		return;  // 长度不符，忽略（防脏存档）
+	}
+	for (int32 i = 0; i < (int32)ECurrencyAccount::Count; ++i)
+	{
+		Balances[i] = Snapshot[i];
+	}
+}

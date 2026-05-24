@@ -38,6 +38,9 @@ public:
 	/** 自游戏开始累计的总时间块数（测试用 / 存档用）。 */
 	int32 GetTotalBlocks() const { return TotalBlocksSinceStart; }
 
+	/** 从存档恢复（直接设总块数，负数视作 0）。 */
+	void RestoreTotalBlocks(int32 Total) { TotalBlocksSinceStart = FMath::Max(0, Total); }
+
 private:
 	/** 单一来源。所有派生量从这里算。 */
 	int32 TotalBlocksSinceStart = 0;
