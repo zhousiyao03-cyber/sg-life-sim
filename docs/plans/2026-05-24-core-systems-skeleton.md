@@ -1,6 +1,6 @@
 # Plan 2: Core Systems Skeleton 实施计划
 
-> **状态：** 进行中（2026-05-24 起草并开始实现）
+> **状态：** ✅ 完成（2026-05-24 起草并当天实现完毕，Task 1–8 全绿）
 > **前置：** Plan 1（Engine Validation Prototype）已完成，GO 决策（用户主观项待勾，但工程上继续推进）
 > **关联 spec：** docs/specs/2026-05-23-sg-life-sim-design.md §6, §10.3
 > **关联 plan：** docs/plans/2026-05-23-engine-validation-prototype.md
@@ -23,9 +23,32 @@
 
 ---
 
+## 完成情况（2026-05-24）
+
+全部 8 个 Task 当天实现完毕，**25 个 AutomationTest 全绿**（headless `Automation RunTests SGLifeSim`），含一条真实跑子系统的端到端集成测试。
+
+| Task | 内容 | 产出 | 测试 | commit |
+|---|---|---|---|---|
+| 1 | EconomySystem 钱包+CPF | `EconomyTypes.h` / `EconomySystem.{h,cpp}` | `SGLifeSim.Economy.*` ×7 | 395763a |
+| 2 | EconomySubsystem BP 壳 | `EconomySubsystem.{h,cpp}` | （UHT 编译验证 BP 可见） | e097c78 |
+| 3 | 时间↔经济月度结算 | TimeSystem 加月份；`Charge`；`FMonthlyFinance`；Subsystem 订阅 `OnTimeAdvanced` | `TimeSystem.MonthRollover` / `Economy.MonthlySettlement` 等 | 699bf08 |
+| 4 | ProgressSystem 软成就 | `ProgressSystem.{h,cpp}` | `SGLifeSim.Progress.*` ×3 | bb77679 |
+| 5 | RelationshipSystem 好感 | `RelationshipTypes.h` / `RelationshipSystem.{h,cpp}` | `SGLifeSim.Relationship.*` ×4 | 2445221 |
+| 6 | PlayerStateSubsystem 属性 | `PlayerStatsTypes.h` / `PlayerStats.{h,cpp}` / `PlayerStateSubsystem.{h,cpp}` | `SGLifeSim.PlayerStats.*` ×4 | 666660a |
+| 7 | SaveSystem 存读档 | `SGSaveGame.h` / `SaveGameSubsystem.{h,cpp}` + Progress/Relationship 子系统壳 | `SGLifeSim.Save.RoundTrip` | 9d7570b |
+| 8 | 集成验证 | `CoreSystemsIntegrationTest.cpp` | `SGLifeSim.Integration.MonthlyLoopAndSave` | （本提交） |
+
+**关键设计落点 / 与原计划的偏差：**
+- 金额统一以「分」(int64) 存，规避浮点误差。CPF 费率：雇员 20% + 雇主 17%，进 OA/SA/MA 按 620/160/220 千分比，OA 兜底余数保证不丢分。
+- 「月」定义为 **28 天（4 周）**，让每月固定从周一开始、月度数学干净（spec 只说「每月 1 号发薪」，未规定月长）。
+- 集成走 **`UGameInstance::InitializeStandalone()`** 在 headless 下拉起真实子系统，验证 `OnTimeAdvanced` 绑定、`InitializeDependency` 顺序、跨月自动结算、每日能量恢复、存读档回灌——这些是子系统**连线**层面的正确性，纯核心单测覆盖不到。
+- 原计划只为 Time/Economy/PlayerState 建子系统；Task 7 聚合存档时补建了 **`UProgressSubsystem` / `URelationshipSubsystem`** 薄壳（成就/好感也需要一个能被 gameplay 改、能被存档读的家），把原生委托桥接成 BP 动态委托。
+
+---
+
 ## Task 序列
 
-### Task 1: EconomySystem 骨架 + 单元测试（最独立，先做）
+### Task 1: EconomySystem 骨架 + 单元测试（最独立，先做）✅
 
 spec §6.2。一个纯 C++ 钱包 + 收支记账 + 月度结算。
 
@@ -94,3 +117,5 @@ PIE 跑一遍：发薪→记账→推时间→月度结算→成就解锁→存�
 ## Definition of Done
 
 Task 1–8 完成 = spec §6 的五大系统都有 C++ 骨架 + 单元测试 + Blueprint 薄壳 + 基础存档，且至少一条「发薪→账单→成就」联动链路在 PIE 验证通过。UI/内容/平衡留给后续 plan。
+
+**✅ 已达成（2026-05-24）：** 五大系统（Economy/Time/Progress/Relationship/PlayerState）均有纯 C++ 核心 + AutomationTest + GameInstanceSubsystem 薄壳 + 统一 USaveGame 存档；「推时间→月度发薪+账单→能量恢复→成就→存档→读档」整条链路由 `SGLifeSim.Integration.MonthlyLoopAndSave` 在 headless GameInstance 上验证通过（比 PIE 更轻、可 CI）。25/25 测试全绿。UI/内容/数值平衡按计划留给后续 plan。
