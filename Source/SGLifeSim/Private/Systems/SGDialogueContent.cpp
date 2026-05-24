@@ -108,18 +108,54 @@ FDialogueTree SGDialogueContent::BuildAhMeiTree()
 	Chat.Effect.Target = Npc;
 	Chat.Effect.Value = 3;
 
+	// 常来常往，阿姨拿你当自家孩子 —— 好感够了，多给一只鸡腿（小奖励 +心情借现金体现免不了，
+	// 这里用「记账赊一顿」体现温情：直接 +$3.5 当作请你吃）。
+	FDialogueChoice Treat = MakeChoice(TEXT("阿姨今天非要请你吃"), TEXT("treat"));
+	Treat.Condition.Type = EDialogueConditionType::MinAffinity;
+	Treat.Condition.Target = Npc;
+	Treat.Condition.Value = 50;
+	Treat.Effect.Type = EDialogueEffectType::AddMoneyCents;
+	Treat.Effect.Value = 350; // 这顿阿姨请，省下 $3.5
+
+	// 恐怖共鸣（同 Uncle Lim 机制）：玩家若真碰过七月冥纸禁忌，才能跟阿姨说。
+	// 本地长辈以过来人安抚 —— 加好感 + 回一点理智。
+	FDialogueChoice Confide = MakeChoice(TEXT("阿姨……七月那天楼下烧的冥纸，我好像不小心碰到了"), TEXT("confide"));
+	Confide.Condition.Type = EDialogueConditionType::HasDiscoveredHorror;
+	Confide.Condition.Value = (int32)EHorrorEvent::ZhiQianTaboo;
+
 	FDialogueTree Tree;
 	Tree.TreeId = Npc;
 	Tree.RootNodeId = TEXT("root");
 	Tree.Nodes = {
 		MakeNode(TEXT("root"), Speaker, TEXT("小伙子，吃什么？今天鸡饭特价。"),
-			{ Buy, Chat, MakeEndChoice(TEXT("先不了")) }),
+			{ Buy, Chat, Treat, Confide, MakeEndChoice(TEXT("先不了")) }),
 
 		MakeNode(TEXT("eat"), Speaker, TEXT("拿去，吃饱点。年轻人别老吃泡面，伤胃。"),
 			{ MakeEndChoice(TEXT("谢谢阿姨")) }),
 
 		MakeNode(TEXT("chat"), Speaker, TEXT("你们这些做 IT 的啊，天天加班到半夜，要顾着身体咧。"),
-			{ MakeEndChoice(TEXT("知道啦")) }),
+			{ MakeChoice(TEXT("阿姨你在这摆摊多少年啦？"), TEXT("chat2")), MakeEndChoice(TEXT("知道啦")) }),
+
+		MakeNode(TEXT("chat2"), Speaker, TEXT("二十几年咯。看着你们一拨拨来，租房、供楼、结婚，又一拨拨走。日子嘛，慢慢熬都会好的。"),
+			{ MakeEndChoice(TEXT("……谢谢阿姨")) }),
+
+		MakeNode(TEXT("treat"), Speaker, TEXT("收什么钱！自家孩子一样，拿去吃。下次记得带朋友来照顾阿姨生意就好咯。"),
+			{ MakeEndChoice(TEXT("那我不客气啦，谢谢阿姨！")) }),
+
+		MakeNode(TEXT("confide"), Speaker, TEXT("哎哟傻孩子，碰到就碰到了，心里别慌。阿姨教你：回去洗个澡，换身衣服，啊。没事的，阿姨在这看着呢。"),
+			{ [Npc]() {
+				FDialogueChoice C = MakeEndChoice(TEXT("（阿姨的语气让你安心了些）"));
+				C.Effect.Type = EDialogueEffectType::AddSanity;
+				C.Effect.Value = 10;
+				return C;
+			}(),
+			  [Npc]() {
+				FDialogueChoice C = MakeEndChoice(TEXT("谢谢阿姨，我记住了"));
+				C.Effect.Type = EDialogueEffectType::AddAffinity;
+				C.Effect.Target = Npc;
+				C.Effect.Value = 5;
+				return C;
+			}() }),
 	};
 	return Tree;
 }
@@ -220,12 +256,18 @@ FDialogueTree SGDialogueContent::BuildColleagueWeiTree()
 	Referral.Effect.Type = EDialogueEffectType::MarkAchievement;
 	Referral.Effect.Target = SGAchievementIds::KnowColleague();
 
+	// 恐怖共鸣（同龄同事版）：玩家若坐末班地铁碰到没倒影的人，才能跟 Wei 吐槽。
+	// 同龄人不像长辈那样安抚 —— 他半信半疑、陪你笑两句带过，回理智少一点，但更像真实的「有人听你说」。
+	FDialogueChoice Confide = MakeChoice(TEXT("欸 Wei，你坐末班地铁……有没有看过车窗里少个倒影？"), TEXT("confide"));
+	Confide.Condition.Type = EDialogueConditionType::HasDiscoveredHorror;
+	Confide.Condition.Value = (int32)EHorrorEvent::MrtNoReflection;
+
 	FDialogueTree Tree;
 	Tree.TreeId = Npc;
 	Tree.RootNodeId = TEXT("root");
 	Tree.Nodes = {
 		MakeNode(TEXT("root"), Speaker, TEXT("哟，也来这边吃啊？坐坐坐，今天那个线上 bug 你看了没？"),
-			{ Chat, Career, Referral, MakeEndChoice(TEXT("改天聊")) }),
+			{ Chat, Career, Referral, Confide, MakeEndChoice(TEXT("改天聊")) }),
 
 		MakeNode(TEXT("chat"), Speaker, TEXT("PM 又临时加需求，我都麻了。在这行啊，习惯就好。"),
 			{ MakeEndChoice(TEXT("同感同感")) }),
@@ -235,6 +277,14 @@ FDialogueTree SGDialogueContent::BuildColleagueWeiTree()
 
 		MakeNode(TEXT("referral"), Speaker, TEXT("我们组在招人，待遇不错。你简历发我，我帮你内推一下！"),
 			{ MakeEndChoice(TEXT("太够意思了，谢谢 Wei！")) }),
+
+		MakeNode(TEXT("confide"), Speaker, TEXT("……噗，你加班加魔怔了吧？不过讲真，那条线我也尽量赶倒数第二班。末班车那个氛围，确实瘆得慌。走走走，吃饱回去睡，别想了。"),
+			{ [Npc]() {
+				FDialogueChoice C = MakeEndChoice(TEXT("（被他这么一打岔，居然轻松了点）"));
+				C.Effect.Type = EDialogueEffectType::AddSanity;
+				C.Effect.Value = 6;
+				return C;
+			}() }),
 	};
 	return Tree;
 }

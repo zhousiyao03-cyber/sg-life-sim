@@ -75,6 +75,45 @@ bool FHorrorDialogueResonanceTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("sanity restored by +12"), Sanity->GetSanity(), SanityBefore + 12);
 	TestFalse(TEXT("dialogue ended after reassure"), Dlg->IsDialogueActive());
 
+	// —— AhMei 共鸣（七月冥纸禁忌）：长辈安抚回理智 +10 ——
+	// 未亲历：分支隐藏。
+	TestTrue(TEXT("start AhMei dialogue"), Dlg->StartDialogue(TEXT("AhMei")));
+	TestEqual(TEXT("AhMei confide hidden before encounter"),
+		FindChoiceContaining(Dlg, TEXT("冥纸")), -1);
+
+	Horror->ApplyEvent(EHorrorEvent::ZhiQianTaboo);
+	TestTrue(TEXT("codex recorded zhiqian"), Codex->HasDiscovered(EHorrorEvent::ZhiQianTaboo));
+	Sanity->Drain(40);
+	const int32 AhMeiSanityBefore = Sanity->GetSanity();
+
+	TestTrue(TEXT("restart AhMei dialogue"), Dlg->StartDialogue(TEXT("AhMei")));
+	const int32 AhMeiConfide = FindChoiceContaining(Dlg, TEXT("冥纸"));
+	TestTrue(TEXT("AhMei confide visible after encounter"), AhMeiConfide >= 0);
+	TestTrue(TEXT("choose AhMei confide"), Dlg->ChooseOption(AhMeiConfide));
+	const int32 AhMeiReassure = FindChoiceContaining(Dlg, TEXT("安心"));
+	TestTrue(TEXT("AhMei reassure present"), AhMeiReassure >= 0);
+	TestTrue(TEXT("choose AhMei reassure"), Dlg->ChooseOption(AhMeiReassure));
+	TestEqual(TEXT("AhMei restored sanity +10"), Sanity->GetSanity(), AhMeiSanityBefore + 10);
+
+	// —— Wei 共鸣（末班地铁无倒影）：同龄人打岔回理智 +6 ——
+	TestTrue(TEXT("start Wei dialogue"), Dlg->StartDialogue(TEXT("Wei")));
+	TestEqual(TEXT("Wei confide hidden before encounter"),
+		FindChoiceContaining(Dlg, TEXT("倒影")), -1);
+
+	Horror->ApplyEvent(EHorrorEvent::MrtNoReflection);
+	TestTrue(TEXT("codex recorded mrt"), Codex->HasDiscovered(EHorrorEvent::MrtNoReflection));
+	Sanity->Drain(40);
+	const int32 WeiSanityBefore = Sanity->GetSanity();
+
+	TestTrue(TEXT("restart Wei dialogue"), Dlg->StartDialogue(TEXT("Wei")));
+	const int32 WeiConfide = FindChoiceContaining(Dlg, TEXT("倒影"));
+	TestTrue(TEXT("Wei confide visible after encounter"), WeiConfide >= 0);
+	TestTrue(TEXT("choose Wei confide"), Dlg->ChooseOption(WeiConfide));
+	const int32 WeiReassure = FindChoiceContaining(Dlg, TEXT("轻松"));
+	TestTrue(TEXT("Wei reassure present"), WeiReassure >= 0);
+	TestTrue(TEXT("choose Wei reassure"), Dlg->ChooseOption(WeiReassure));
+	TestEqual(TEXT("Wei restored sanity +6"), Sanity->GetSanity(), WeiSanityBefore + 6);
+
 	GI->Shutdown();
 	return true;
 }
