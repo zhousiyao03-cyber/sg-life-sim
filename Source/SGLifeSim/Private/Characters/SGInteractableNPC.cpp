@@ -2,6 +2,7 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
+#include "Engine/Engine.h"
 
 ASGInteractableNPC::ASGInteractableNPC()
 {
@@ -21,9 +22,16 @@ ASGInteractableNPC::ASGInteractableNPC()
 
 void ASGInteractableNPC::OnInteract_Implementation(AActor* Interactor)
 {
-	// Task 9 起接入 UMG 对话框；原型先打日志验证交互链路打通
+	// 原型：用屏幕文本显示对话（替代 UMG 对话框，受当前工具链限制）。
 	UE_LOG(LogTemp, Log, TEXT("[NPC] %s: %s"),
 		*SpeakerName.ToString(), *DialogueLine.ToString());
+	if (GEngine)
+	{
+		const FString Line = FString::Printf(TEXT("%s：%s"),
+			*SpeakerName.ToString(), *DialogueLine.ToString());
+		// Key=2 固定槽，重复交互刷新同一行；显示 5 秒
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Yellow, Line);
+	}
 }
 
 FText ASGInteractableNPC::GetInteractionPrompt_Implementation() const

@@ -2,13 +2,19 @@
 
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
+#include "Characters/SGInteractableNPC.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/Engine.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "InputActionValue.h"
+#include "Interactables/InteractableInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "Systems/TimeBlock.h"
+#include "Systems/TimeSubsystem.h"
 
 ASGPlayerCharacter::ASGPlayerCharacter()
 {
@@ -71,6 +77,7 @@ void ASGPlayerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	UpdateLocomotionAnimation();
+	DrawPrototypeHUD();
 }
 
 void ASGPlayerCharacter::UpdateLocomotionAnimation()
@@ -116,7 +123,97 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASGPlayerCharacter::Move);
 		}
+
+		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
+		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
+		auto BindIA = [EIC, this](const TCHAR* Path, void (ASGPlayerCharacter::*Fn)())
+		{
+			if (UInputAction* IA = LoadObject<UInputAction>(nullptr, Path))
+			{
+				EIC->BindAction(IA, ETriggerEvent::Started, this, Fn);
+			}
+		};
+		BindIA(TEXT("/Game/Input/IA_Interact.IA_Interact"), &ASGPlayerCharacter::TryInteract);
+		BindIA(TEXT("/Game/Input/IA_AdvanceTime.IA_AdvanceTime"), &ASGPlayerCharacter::AdvanceTime);
+		BindIA(TEXT("/Game/Input/IA_OpenLocationMenu.IA_OpenLocationMenu"), &ASGPlayerCharacter::SwitchLocation);
 	}
+}
+
+void ASGPlayerCharacter::TryInteract()
+{
+	// 找范围内最近的可交互 NPC（原型：遍历同类 actor + 距离判断）
+	TArray<AActor*> Npcs;
+	UGameplayStatics::GetAllActorsOfClass(this, ASGInteractableNPC::StaticClass(), Npcs);
+
+	AActor* Nearest = nullptr;
+	float NearestDistSq = FMath::Square(300.f); // 交互距离 3m
+	const FVector MyLoc = GetActorLocation();
+	for (AActor* Npc : Npcs)
+	{
+		const float DistSq = FVector::DistSquared(MyLoc, Npc->GetActorLocation());
+		if (DistSq < NearestDistSq)
+		{
+			NearestDistSq = DistSq;
+			Nearest = Npc;
+		}
+	}
+
+	if (Nearest && Nearest->Implements<UInteractableInterface>())
+	{
+		IInteractableInterface::Execute_OnInteract(Nearest, this);
+	}
+	else if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Silver, TEXT("附近没有可交互的人"));
+	}
+}
+
+void ASGPlayerCharacter::AdvanceTime()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UTimeSubsystem* TimeSys = GI->GetSubsystem<UTimeSubsystem>())
+		{
+			TimeSys->AdvanceBlock();
+		}
+	}
+}
+
+void ASGPlayerCharacter::SwitchLocation()
+{
+	// 原型：M 在出租屋 / 食阁两个关卡间直接切换（替代 UMG 跳转菜单）。
+	// TimeSubsystem 在 GameInstance 上，跨关卡保留 —— 验证 ADR 0005。
+	const FString Current = GetWorld() ? GetWorld()->GetMapName() : FString();
+	const bool bAtHawker = Current.Contains(TEXT("HawkerCenter"));
+	const FName Target = bAtHawker ? FName(TEXT("L_Rental")) : FName(TEXT("L_HawkerCenter"));
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan,
+			FString::Printf(TEXT("前往：%s"), *Target.ToString()));
+	}
+	UGameplayStatics::OpenLevel(this, Target);
+}
+
+void ASGPlayerCharacter::DrawPrototypeHUD()
+{
+	if (!GEngine)
+	{
+		return;
+	}
+	UGameInstance* GI = GetGameInstance();
+	UTimeSubsystem* TimeSys = GI ? GI->GetSubsystem<UTimeSubsystem>() : nullptr;
+	if (!TimeSys)
+	{
+		return;
+	}
+
+	const FText BlockText = UEnum::GetDisplayValueAsText(TimeSys->GetCurrentBlock());
+	const FText WeekdayText = UEnum::GetDisplayValueAsText(TimeSys->GetWeekday());
+	const FString Hud = FString::Printf(TEXT("Day %d · %s · %s    [E] 交谈  [T] 推进时间  [M] 切换地点"),
+		TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString());
+
+	// 固定 Key=1 让这行原地刷新而不是堆叠
+	GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Hud);
 }
 
 void ASGPlayerCharacter::Move(const FInputActionValue& Value)

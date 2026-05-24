@@ -67,6 +67,18 @@ private:
 	/** 按当前水平速度在 Idle / Walk 间切换单节点播放，避免每帧重复 Play。 */
 	void UpdateLocomotionAnimation();
 
+	/** IA_Interact（E）：找范围内最近的可交互对象并触发 OnInteract。 */
+	void TryInteract();
+
+	/** IA_AdvanceTime（T）：推进一个时间块（经 UTimeSubsystem）。 */
+	void AdvanceTime();
+
+	/** IA_OpenLocationMenu（M）：在出租屋 / 食阁两个关卡间切换。原型用直接跳转代替菜单 UMG。 */
+	void SwitchLocation();
+
+	/** 每帧把「Day X · 周几 · 时间块」画到屏幕（原型 HUD，替代 UMG W_HUD）。 */
+	void DrawPrototypeHUD();
+
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimSequence> CurrentAnim;

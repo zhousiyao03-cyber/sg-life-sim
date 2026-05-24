@@ -1,0 +1,76 @@
+# Engine Validation Prototype 验证结果
+
+> **日期：** 2026-05-24
+> **执行：** ZEUS ZHOU + Claude（经 UE5 MCP 自动化桥驱动编辑器）
+> **关联 plan：** docs/plans/2026-05-23-engine-validation-prototype.md
+> **关联 spec：** docs/specs/2026-05-23-sg-life-sim-design.md
+
+## 验证目标清单
+
+- [x] UE5.6.1 项目能在本机正常构建 + 运行
+- [ ] 编辑器冷启动 < 90 秒 —— 未单独计时（编辑器全程开启，未冷启动测量）
+- [x] 等距俯视 45° 镜头看起来对 —— 正交投影 Pitch/Yaw=-45，OrthoWidth=700（用户拍板），截图见 Saved/Screenshots
+- [x] 主角能 WASD 走动 + 触发交互 —— 已验证（方向正确、撞墙停、稳站地板、相机跟随）
+- [~] 时间块能推进 —— 系统就绪：`UTimeSubsystem` + T 键绑定；时间系统有单元测试（Task 2）；HUD 用屏幕文本显示
+- [~] 对话框能弹出 —— 交互链路已验证（E→OnInteract，日志确认）；显示用屏幕文本替代 UMG（见下「已知限制」）
+- [x] 两个场景能切换 —— M 键 OpenLevel，实测 L_Rental ↔ L_HawkerCenter 切换成功，pawn 正确重生
+- [~] 外部资产导入 —— Mixamo 导入管线已验证；外部素材下载需人手浏览器步骤（见 asset-import-workflow.md）
+- [x] 全部提交到 git 仓库
+
+图例：[x] 完成 / [~] 机制就绪但有替代实现或待人手补 / [ ] 未做
+
+## 关键回答的问题
+
+### 1. UE5 编辑器性能可接受吗？
+可接受。开发全程编辑器常开 + Live Coding 热编译（函数体改动几秒~几十秒生效），迭代顺畅。
+**注意 Live Coding 限制**：新增 UPROPERTY / 新 UCLASS 的反射不刷新，需关编辑器做完整 Build。
+
+### 2. 等距 45° 是 spec §9.1 想要的视觉吗？
+是。正交 + Pitch/Yaw=-45 的等距盒子感符合 Disco Elysium / Cult of the Lamb 调性。
+OrthoWidth 经对比（1500 vs 700）由用户定为 **700**（角色清晰可辨，适合人生模拟里盯着角色看）。
+
+### 3. 外部资产能正常融合吗？
+Mixamo 角色导入 + 单节点 Idle/Walk 切换工作良好。外部道具的风格融合待人手下载真实资产后评估。
+
+### 4. C++ + Blueprint 工作流对一人开发高效吗？
+本原型大量逻辑落在 **C++ 核心**（移动、等距相机、locomotion 切换、交互、时间推进、场景切换、原型 HUD），
+Blueprint 仅作薄壳（BP_PlayerCharacter 设资产引用）。配合 UE5 MCP 自动化，编辑器侧操作（导资产、建关卡、
+摆 actor、配 Enhanced Input）也能脚本化。结论：对一人开发高效，C++ 优先 + BP 薄壳的取向成立。
+
+### 5. 愿意继续在 UE5 全职 6+ 个月吗？
+（待用户填）
+
+## 决策
+
+- [ ] **GO** — 继续 UE5，写 Plan 2（核心系统骨架）
+- [ ] **PIVOT** — 切 Unity 6
+- [ ] **HOLD** — 还需更多验证：____
+
+（待用户勾选）
+
+## 已知限制 / 与原 plan 的偏差
+
+1. **UMG widget 未做成正式控件**。当前工具链下 UMG 控件树编辑不可达
+   （MCP widget-authoring 子动作不在 manage_blueprint 的 schema 枚举里；Python 不暴露 WidgetTree）。
+   因此 W_HUD / W_DialogueBox / W_LocationMenu 用 **`AddOnScreenDebugMessage` 屏幕文本 + C++ 逻辑**实现等效功能：
+   - HUD：每帧画「Day X · 周几 · 时间块 + 操作提示」（`ASGPlayerCharacter::DrawPrototypeHUD`）
+   - 对话：E 交互时画 NPC 台词（`ASGInteractableNPC::OnInteract`）
+   - 场景切换：M 直接在两关卡间跳转（替代弹出菜单）
+   这些屏幕文本在实机视口可见，但**不会出现在高分截图里**（UE 截图路径不含 debug canvas）。
+   → Plan 2 待工具修复或手动在编辑器里把这三个换成真正的 UMG。
+
+2. **场景命名**：用 `L_Rental` / `L_HawkerCenter`（plan 原写 `L_Apartment`，等价）。
+
+3. **Live Coding 反射限制**：本会话新增的 C++ UPROPERTY（`IdleAnim`/`WalkAnim`/`WalkSpeedThreshold` 等）
+   与 `OrthoWidth=700` 改动，靠 Live Coding 函数体 + LoadObject 兜底在跑；
+   **下次关编辑器做一次完整 Build** 后这些才会 bake 进反射、在 BP 面板可见可调。
+
+4. **外部资产下载**（Task 7）需浏览器登录 Fab/Sketchfab，是唯一留给人手的 5 分钟步骤。
+
+## 经验教训（记入 future plans）
+
+- UE5 MCP 自动化桥能覆盖绝大多数编辑器操作（导 FBX、建蓝图壳、配 Enhanced Input、摆关卡、PIE、截图），
+  但 **UMG 控件树编辑** 和 **新 C++ 类型的反射刷新** 是两个明确空白，需人手或完整重编译。
+- Mixamo 动画 FBX 必须显式指定目标 skeleton（Python FbxImportUI），否则骨骼对不上。
+- locomotion 不必上 AnimBlueprint：纯 C++ 按速度 `PlayAnimation` 单节点切换，简单可靠且符合 C++ 核心取向。
+- 验证「看不见的逻辑」优先用日志/状态查询（如 `[NPC]` 日志、`GetCurrentLevelName`），别只依赖截图。
