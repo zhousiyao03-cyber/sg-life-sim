@@ -15,6 +15,7 @@
 #include "Systems/AssetsTypes.h"
 #include "Systems/CareerSubsystem.h"
 #include "Systems/SaveGameSubsystem.h"
+#include "UI/SGActivityMenuWidget.h"
 
 namespace
 {
@@ -138,6 +139,14 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		JobHopButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnJobHopClicked);
+
+		ActivitiesButton = MakeButton(WidgetTree, TEXT("做点事…（在这儿过日子）"), TEXT("ActivitiesButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(ActivitiesButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 14.f, 0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		ActivitiesButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnDoActivitiesClicked);
 
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
@@ -335,6 +344,25 @@ void USGLocationMenuWidget::OnJobHopClicked()
 		}
 	}
 	SetStatus(TEXT("操作失败"));
+}
+
+void USGLocationMenuWidget::OnDoActivitiesClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC)
+	{
+		return;
+	}
+	if (!ActivityMenu)
+	{
+		ActivityMenu = CreateWidget<USGActivityMenuWidget>(PC, USGActivityMenuWidget::StaticClass());
+	}
+	if (ActivityMenu)
+	{
+		// 关掉地点菜单（不旅行），打开活动菜单接管输入。
+		RemoveFromParent();
+		ActivityMenu->OpenMenu();
+	}
 }
 
 void USGLocationMenuWidget::OnCloseClicked()

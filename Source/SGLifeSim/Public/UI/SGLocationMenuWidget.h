@@ -6,6 +6,7 @@
 
 class UButton;
 class UTextBlock;
+class USGActivityMenuWidget;
 
 /**
  * 游戏菜单（纯 C++ UMG）。spec 原 plan 的 W_LocationMenu。
@@ -57,6 +58,10 @@ protected:
 	UFUNCTION()
 	void OnJobHopClicked();
 
+	/** 打开活动菜单（在当前地点做点事）。 */
+	UFUNCTION()
+	void OnDoActivitiesClicked();
+
 	UFUNCTION()
 	void OnCloseClicked();
 
@@ -92,7 +97,14 @@ private:
 	TObjectPtr<UButton> JobHopButton;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UButton> ActivitiesButton;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UButton> CloseButton;
+
+	/** 活动菜单（懒创建）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<USGActivityMenuWidget> ActivityMenu;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> StatusLabel;
