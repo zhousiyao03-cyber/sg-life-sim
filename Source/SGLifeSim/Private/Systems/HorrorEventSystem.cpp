@@ -44,6 +44,24 @@ FHorrorEventDef FHorrorEventSystem::GetEventDef(EHorrorEvent Event)
 		D.MoodDelta = -8; D.HealthDelta = -4; D.SanityCost = 15; D.Weight = 4; D.bGhostMonthOnly = true;
 		break;
 
+	// —— 低理智幻觉（理智失常才会「看见」，分不清真假；恐惧是真的，扣理智）——
+	case EHorrorEvent::HallucCorridorFigure:
+		D.Title = FText::FromString(TEXT("你确定刚才走廊尽头站着的，是人吗？再看，那里什么都没有。"));
+		D.MoodDelta = -3; D.SanityCost = 5; D.Weight = 10; D.bLowSanityOnly = true;
+		break;
+	case EHorrorEvent::HallucMirrorLag:
+		D.Title = FText::FromString(TEXT("镜子里的你，比你慢了半拍才转过头。你盯着它，它也盯着你。"));
+		D.MoodDelta = -4; D.SanityCost = 6; D.Weight = 9; D.bLowSanityOnly = true;
+		break;
+	case EHorrorEvent::HallucDeportation:
+		D.Title = FText::FromString(TEXT("你又在机场被人推搡着往登机口走。可这一次——你是醒着的。"));
+		D.MoodDelta = -5; D.HealthDelta = -2; D.SanityCost = 7; D.Weight = 8; D.bLowSanityOnly = true;
+		break;
+	case EHorrorEvent::HallucWallFace:
+		D.Title = FText::FromString(TEXT("墙角那片霉斑，昨天还不是一张脸的形状。它好像……在等你先眨眼。"));
+		D.MoodDelta = -3; D.SanityCost = 5; D.Weight = 9; D.bLowSanityOnly = true;
+		break;
+
 	case EHorrorEvent::None:
 	default:
 		break;
@@ -51,7 +69,7 @@ FHorrorEventDef FHorrorEventSystem::GetEventDef(EHorrorEvent Event)
 	return D;
 }
 
-EHorrorEvent FHorrorEventSystem::PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus)
+EHorrorEvent FHorrorEventSystem::PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus, bool bLowSanity)
 {
 	// 组装候选池（含权重）：None + 所有当前可入池的事件。
 	// 低理智的 DreadBonus 从「无事」权重里扣（保底 5），理智越低越容易出事。
@@ -69,6 +87,10 @@ EHorrorEvent FHorrorEventSystem::PickEvent(FRandomStream& Stream, bool bGhostMon
 		if (Def.bGhostMonthOnly && !bGhostMonth)
 		{
 			continue; // 非鬼月不入池
+		}
+		if (Def.bLowSanityOnly && !bLowSanity)
+		{
+			continue; // 理智没崩到失常档，不会「看见」幻觉
 		}
 		Pool.Add({ E, Def.Weight });
 		Total += Def.Weight;

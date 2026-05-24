@@ -5,6 +5,7 @@
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/SanitySubsystem.h"
+#include "Systems/SanityTypes.h"
 
 void UHorrorEventSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -61,11 +62,14 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 
 	const bool bGhost = IsGhostMonth();
 	int32 DreadBonus = 0;
+	bool bLowSanity = false;
 	if (USanitySubsystem* Sanity = GetGameInstance()->GetSubsystem<USanitySubsystem>())
 	{
 		DreadBonus = Sanity->GetExtraDreadWeight();
+		// 理智「失常」档及以下才会「看见」幻觉。
+		bLowSanity = (uint8)Sanity->GetState() >= (uint8)ESanityState::Disturbed;
 	}
-	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus));
+	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity));
 }
 
 bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)

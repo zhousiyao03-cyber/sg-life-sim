@@ -82,6 +82,31 @@ bool FHorrorEventSystemTest::RunTest(const FString& Parameters)
 		TestFalse(FString::Printf(TEXT("event %d has a title"), i), Def.Title.IsEmpty());
 	}
 
+	// 理智正常（bLowSanity=false）：抽很多次都不该出现低理智幻觉。
+	{
+		FRandomStream Stream(20240524);
+		bool bSawHalluc = false;
+		for (int32 i = 0; i < 3000; ++i)
+		{
+			// 鬼月开着也无妨，幻觉门控独立于鬼月。
+			const EHorrorEvent E = FHorrorEventSystem::PickEvent(Stream, /*ghost*/true, /*dread*/0, /*lowSanity*/false);
+			if (FHorrorEventSystem::GetEventDef(E).bLowSanityOnly) { bSawHalluc = true; break; }
+		}
+		TestFalse(TEXT("hallucinations never appear at normal sanity"), bSawHalluc);
+	}
+
+	// 理智失常（bLowSanity=true）：应能抽到幻觉。
+	{
+		FRandomStream Stream(424242);
+		bool bSawHalluc = false;
+		for (int32 i = 0; i < 3000; ++i)
+		{
+			const EHorrorEvent E = FHorrorEventSystem::PickEvent(Stream, /*ghost*/false, /*dread*/40, /*lowSanity*/true);
+			if (FHorrorEventSystem::GetEventDef(E).bLowSanityOnly) { bSawHalluc = true; break; }
+		}
+		TestTrue(TEXT("hallucinations appear at low sanity"), bSawHalluc);
+	}
+
 	return true;
 }
 

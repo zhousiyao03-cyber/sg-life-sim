@@ -20,6 +20,13 @@ enum class EHorrorEvent : uint8
 	ZhiQianTaboo         UMETA(DisplayName = "七月冥纸禁忌"),       // 鬼月限定
 	KopiWarning          UMETA(DisplayName = "咖啡店的提醒"),       // 鬼月限定
 	Pontianak            UMETA(DisplayName = "组屋楼下的白影"),     // 鬼月限定，稀有
+
+	// —— 低理智幻觉（理智「失常」档才会出现，分不清真假）——
+	HallucCorridorFigure UMETA(DisplayName = "走廊尽头的人影"),     // 低理智限定
+	HallucMirrorLag      UMETA(DisplayName = "镜中慢半拍"),         // 低理智限定
+	HallucDeportation    UMETA(DisplayName = "醒着的遣返"),         // 低理智限定
+	HallucWallFace       UMETA(DisplayName = "墙上的脸"),           // 低理智限定
+
 	Count                UMETA(Hidden),
 };
 
@@ -52,4 +59,8 @@ struct FHorrorEventDef
 	/** 仅在农历七月（鬼月）可能发生。 */
 	UPROPERTY(BlueprintReadOnly, Category = "Horror")
 	bool bGhostMonthOnly = false;
+
+	/** 仅在理智低（失常档及以下）时出现的幻觉 —— 分不清真假。 */
+	UPROPERTY(BlueprintReadOnly, Category = "Horror")
+	bool bLowSanityOnly = false;
 };

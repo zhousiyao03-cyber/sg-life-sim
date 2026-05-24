@@ -42,7 +42,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 | 身份 | `FResidencySystem` / `UResidencySubsystem` | EP/SP→申请PR→PR→公民 状态机（含被拒退回） |
 | 资产 | `FAssetsSystem` / `UAssetsSubsystem` | 房/车 tier + 投资（月度复利回报）+ **按揭融资**（首付 25%/月供逐月自动扣/利息随余额递减/提前结清，未还本金计入净资产负债） |
 | 事件 | `FEconomicEventSystem` / `UEconomicEventSubsystem` | 每月加权随机经济事件（行情涨跌/年终奖/政府红包/突发账单），可种子复现，弹 HUD toast |
-| 恐怖 | `FHorrorEventSystem` / `UHorrorEventSubsystem` | 深夜随机降临的新加坡都市传说 + 农历七月（中元节）禁忌 + 异乡人心理恐怖；扣心情/健康、弹阴森气泡；鬼月概率升温并解锁限定事件，可种子复现 |
+| 恐怖 | `FHorrorEventSystem` / `UHorrorEventSubsystem` | 深夜随机降临的新加坡都市传说 + 农历七月（中元节）禁忌 + 异乡人心理恐怖；扣心情/健康/理智、弹阴森气泡；鬼月概率升温并解锁限定事件；**理智失常时出现分不清真假的幻觉**；可种子复现 |
 | 理智 | `FSanitySystem` / `USanitySubsystem` | 理智 0~100（平静/不安/失常/濒临崩溃）：恐怖事件消耗理智，理智越低深夜越频越凶（恐惧螺旋）；每日缓慢恢复但鬼月无喘息；进存档 |
 | 终局 | `FEndingEvaluator` / `UEndingSubsystem` | 五终局：四软终局（扎根/兑现/心碎/漂着）+ 恐怖坏结局「被压垮」（理智耗尽，盖过一切）；评估倾向 + 主动选择 + 归零强制 |
 | 对话 | `FDialogueSystem` / `UDialogueSubsystem` + `USGDialogueWidget` + `SGDialogueContent` | 数据驱动对话树：选项条件门控（好感/身份/成就）+ 效果（好感/钱/成就）；按 E 弹纯 C++ UMG 对话面板。内容数据化（邻居 Ah Hua 多分支故事弧 + 食阁阿姨 Ah Mei），含 `ValidateTree` 完整性校验器 |
