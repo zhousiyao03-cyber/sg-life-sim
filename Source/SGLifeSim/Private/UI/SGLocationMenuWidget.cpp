@@ -15,6 +15,8 @@
 #include "Systems/AssetsTypes.h"
 #include "Systems/CareerSubsystem.h"
 #include "Systems/SaveGameSubsystem.h"
+#include "Systems/NightCommuteSubsystem.h"
+#include "Systems/NightCommuteTypes.h"
 #include "UI/SGActivityMenuWidget.h"
 
 namespace
@@ -75,6 +77,39 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Center);
 			BoxSlot->SetPadding(FMargin(0.f, 0.f, 0.f, 18.f));
 		}
+
+		// 夜归抉择入口（鬼月深夜才可见）：放最顶，营造「先要过这一关」的压迫感。
+		NightCommuteButton = MakeButton(WidgetTree, TEXT("🛗 这电梯……停在 13 楼，门开着"), TEXT("NightCommuteButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(NightCommuteButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 0.f, 0.f, 14.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		NightCommuteButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnNightCommuteClicked);
+
+		CommuteWaitButton = MakeButton(WidgetTree, TEXT("等下一趟（别进去）"), TEXT("CommuteWaitButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CommuteWaitButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		CommuteWaitButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnCommuteWaitClicked);
+
+		CommuteStepInButton = MakeButton(WidgetTree, TEXT("管它呢，赶紧进去"), TEXT("CommuteStepInButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CommuteStepInButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		CommuteStepInButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnCommuteStepInClicked);
+
+		CommuteStairsButton = MakeButton(WidgetTree, TEXT("走楼梯上去（很累）"), TEXT("CommuteStairsButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CommuteStairsButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f, 0.f, 14.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		CommuteStairsButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnCommuteStairsClicked);
 
 		RentalButton = MakeButton(WidgetTree, TEXT("出租屋  ·  L_Rental"), TEXT("RentalButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(RentalButton))
@@ -185,6 +220,9 @@ void USGLocationMenuWidget::OpenMenu()
 	{
 		AddToViewport(100);
 	}
+	// 每次打开都从普通态起步，按当前是否鬼月深夜决定露不露夜归入口。
+	bInNightCommute = false;
+	RefreshButtonVisibility();
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		FInputModeGameAndUI Mode;
@@ -368,4 +406,85 @@ void USGLocationMenuWidget::OnDoActivitiesClicked()
 void USGLocationMenuWidget::OnCloseClicked()
 {
 	CloseMenu();
+}
+
+bool USGLocationMenuWidget::IsNightCommuteAvailable() const
+{
+	if (const APlayerController* PC = GetOwningPlayer())
+	{
+		if (const UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (const UNightCommuteSubsystem* NC = GI->GetSubsystem<UNightCommuteSubsystem>())
+			{
+				return NC->IsAvailable();
+			}
+		}
+	}
+	return false;
+}
+
+void USGLocationMenuWidget::RefreshButtonVisibility()
+{
+	// 抉择态：只露三个选项 + 状态行，藏起一切日常项（让玩家无从逃避这一刻）。
+	// 普通态：露日常项；夜归入口仅在鬼月深夜出现。
+	const ESlateVisibility DailyVis    = bInNightCommute ? ESlateVisibility::Collapsed : ESlateVisibility::Visible;
+	const ESlateVisibility ChoiceVis   = bInNightCommute ? ESlateVisibility::Visible   : ESlateVisibility::Collapsed;
+	const ESlateVisibility EntranceVis = (!bInNightCommute && IsNightCommuteAvailable())
+		? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+
+	auto SetVis = [](UButton* Btn, ESlateVisibility Vis) { if (Btn) { Btn->SetVisibility(Vis); } };
+
+	SetVis(NightCommuteButton, EntranceVis);
+
+	SetVis(CommuteWaitButton, ChoiceVis);
+	SetVis(CommuteStepInButton, ChoiceVis);
+	SetVis(CommuteStairsButton, ChoiceVis);
+
+	SetVis(RentalButton, DailyVis);
+	SetVis(HawkerButton, DailyVis);
+	SetVis(SaveButton, DailyVis);
+	SetVis(LoadButton, DailyVis);
+	SetVis(BuyHdbButton, DailyVis);
+	SetVis(PrepayButton, DailyVis);
+	SetVis(PromoteButton, DailyVis);
+	SetVis(JobHopButton, DailyVis);
+	SetVis(ActivitiesButton, DailyVis);
+}
+
+void USGLocationMenuWidget::OnNightCommuteClicked()
+{
+	bInNightCommute = true;
+	RefreshButtonVisibility();
+	SetStatus(TEXT("Uncle Lim 说过：别进去……"));
+}
+
+void USGLocationMenuWidget::ResolveNightCommute(uint8 Choice)
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (UNightCommuteSubsystem* NC = GI->GetSubsystem<UNightCommuteSubsystem>())
+			{
+				NC->MakeChoice((ENightCommuteChoice)Choice);
+			}
+		}
+	}
+	// 结算文案由 PlayerCharacter 订阅 OnResolved 弹气泡；关菜单回游戏即可。
+	CloseMenu();
+}
+
+void USGLocationMenuWidget::OnCommuteWaitClicked()
+{
+	ResolveNightCommute((uint8)ENightCommuteChoice::WaitForNext);
+}
+
+void USGLocationMenuWidget::OnCommuteStepInClicked()
+{
+	ResolveNightCommute((uint8)ENightCommuteChoice::StepIn);
+}
+
+void USGLocationMenuWidget::OnCommuteStairsClicked()
+{
+	ResolveNightCommute((uint8)ENightCommuteChoice::TakeStairs);
 }

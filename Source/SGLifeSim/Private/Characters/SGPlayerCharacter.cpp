@@ -31,6 +31,7 @@
 #include "Systems/MilestoneSystem.h"
 #include "Systems/HorrorEventSubsystem.h"
 #include "Systems/HorrorCodexSubsystem.h"
+#include "Systems/NightCommuteSubsystem.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -129,6 +130,10 @@ void ASGPlayerCharacter::BeginPlay()
 		if (UEndingSubsystem* Ending = GI->GetSubsystem<UEndingSubsystem>())
 		{
 			Ending->OnEndingChosen.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleEndingChosen);
+		}
+		if (UNightCommuteSubsystem* NightCommute = GI->GetSubsystem<UNightCommuteSubsystem>())
+		{
+			NightCommute->OnResolved.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleNightCommuteResolved);
 		}
 	}
 
@@ -335,6 +340,20 @@ void ASGPlayerCharacter::HandleHorrorEvent(FText Title)
 	if (HudWidget && !Title.IsEmpty())
 	{
 		HudWidget->SetDialogueText(FText::FromString(FString::Printf(TEXT("🕯 %s"), *Title.ToString())));
+		FTimerDelegate ClearDel = FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }
+		});
+		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 8.f, /*bLoop=*/false);
+	}
+}
+
+void ASGPlayerCharacter::HandleNightCommuteResolved(const FText& Message)
+{
+	// 夜归抉择的结算文案走和恐怖事件同一条气泡通道（底部居中、停留久）。
+	if (HudWidget && !Message.IsEmpty())
+	{
+		HudWidget->SetDialogueText(FText::FromString(FString::Printf(TEXT("🛗 %s"), *Message.ToString())));
 		FTimerDelegate ClearDel = FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
 			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }

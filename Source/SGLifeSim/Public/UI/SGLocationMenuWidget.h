@@ -62,6 +62,22 @@ protected:
 	UFUNCTION()
 	void OnDoActivitiesClicked();
 
+	/** 鬼月深夜：进入夜归抉择（展开三个选项，藏起其余菜单项）。 */
+	UFUNCTION()
+	void OnNightCommuteClicked();
+
+	/** 夜归抉择——等下一趟（安全慢）。 */
+	UFUNCTION()
+	void OnCommuteWaitClicked();
+
+	/** 夜归抉择——赶紧进去（省事但赌）。 */
+	UFUNCTION()
+	void OnCommuteStepInClicked();
+
+	/** 夜归抉择——走楼梯（最稳最累）。 */
+	UFUNCTION()
+	void OnCommuteStairsClicked();
+
 	UFUNCTION()
 	void OnCloseClicked();
 
@@ -71,6 +87,21 @@ private:
 
 	/** 在菜单里显示一行操作反馈（如「已存档 ✓」）。 */
 	void SetStatus(const FString& Message);
+
+	/**
+	 * 按当前是否处于「夜归抉择」态刷新各按钮可见性：
+	 * 普通态显示日常菜单项（夜归入口仅鬼月深夜可见）；抉择态只露三个选项。
+	 */
+	void RefreshButtonVisibility();
+
+	/** 当前是否可触发夜归抉择（查 UNightCommuteSubsystem::IsAvailable）。 */
+	bool IsNightCommuteAvailable() const;
+
+	/** 做出夜归抉择、关菜单回游戏（结算气泡由 PlayerCharacter 的委托弹）。 */
+	void ResolveNightCommute(uint8 Choice);
+
+	/** 是否正处于夜归抉择子界面（决定刷新时露哪组按钮）。 */
+	bool bInNightCommute = false;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> RentalButton;
@@ -98,6 +129,20 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> ActivitiesButton;
+
+	/** 夜归抉择入口（仅鬼月深夜可见）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> NightCommuteButton;
+
+	/** 夜归抉择三选项（仅在抉择态可见）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> CommuteWaitButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> CommuteStepInButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> CommuteStairsButton;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> CloseButton;

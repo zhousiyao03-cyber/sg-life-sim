@@ -102,6 +102,10 @@ private:
 	UFUNCTION()
 	void HandleHorrorEvent(FText Title);
 
+	/** 绑定到 UNightCommuteSubsystem::OnResolved，把夜归抉择结算文案弹成阴森气泡。 */
+	UFUNCTION()
+	void HandleNightCommuteResolved(const FText& Message);
+
 	/** 绑定到 UEndingSubsystem::OnEndingChosen，盖结局演出 overlay。 */
 	UFUNCTION()
 	void HandleEndingChosen(EEnding Ending);
