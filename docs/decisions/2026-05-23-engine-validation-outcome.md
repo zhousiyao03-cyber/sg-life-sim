@@ -8,9 +8,9 @@
 ## 验证目标清单
 
 - [x] UE5.6.1 项目能在本机正常构建 + 运行
-- [ ] 编辑器冷启动 < 90 秒 —— 未单独计时（编辑器全程开启，未冷启动测量）
+- [x] 编辑器冷启动 < 90 秒 —— 本会话多次冷启动实测：32.8s / 36.6s / 61.7s（最慢一次含 shader 编译），均 < 90s（日志 `LogLoad: (Engine Initialization) Total time`）
 - [x] 等距俯视 45° 镜头看起来对 —— 正交投影 Pitch/Yaw=-45，OrthoWidth=700（用户拍板），截图见 Saved/Screenshots
-- [x] 主角能 WASD 走动 + 触发交互 —— 已验证（方向正确、撞墙停、稳站地板、相机跟随）
+- [x] 主角能 WASD 走动 + 触发交互 —— 用户实测确认四方向移动正确、撞墙停、相机跟随；曾因 IMC 的 WASD modifier 为空导致"只能往前走 + 走出地图"，已修（D=+X / A=Negate / W=Swizzle / S=Swizzle+Negate，commit e7d10b2）
 - [x] 时间块能推进 —— `UTimeSubsystem` + T 键绑定，有单元测试（Task 2）；HUD 状态行由 `USGHudWidget`（C++ UMG）显示
 - [x] 对话框能弹出 —— E→OnInteract（日志确认）+ NPC 台词显示在 `USGHudWidget` 对话气泡（C++ UMG），5 秒自动消失
 - [x] 两个场景能切换 —— M 键 OpenLevel，实测 L_Rental ↔ L_HawkerCenter 切换成功，pawn 正确重生
