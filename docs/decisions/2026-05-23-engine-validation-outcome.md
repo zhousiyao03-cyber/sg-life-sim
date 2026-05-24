@@ -74,3 +74,8 @@ Blueprint 仅作薄壳（BP_PlayerCharacter 设资产引用）。配合 UE5 MCP 
 - Mixamo 动画 FBX 必须显式指定目标 skeleton（Python FbxImportUI），否则骨骼对不上。
 - locomotion 不必上 AnimBlueprint：纯 C++ 按速度 `PlayAnimation` 单节点切换，简单可靠且符合 C++ 核心取向。
 - 验证「看不见的逻辑」优先用日志/状态查询（如 `[NPC]` 日志、`GetCurrentLevelName`），别只依赖截图。
+- **编辑器视口截图只在窗口前台可见时才渲染**：后台时 `control_editor screenshot` 永不落盘（或全黑）。
+  截图前用 PowerShell + Win32 `SetForegroundWindow` 把编辑器拉到前台即可正常落盘。两关卡最终观感
+  （出租屋暖木地板+家具、食阁 teal 桌配凳+深色摊位柜台）就是这样补拍确认的。
+- **灯光过曝排查**：DirectionalLight intensity 偏高（食阁原为 10）+ 无手动曝光 → 自动曝光把浅色地板冲成纯白。
+  统一方案：directional ~3.0 暖白 + 一个 unbound PostProcessVolume 设 manual exposure（EV 11），两关卡观感一致可控。
