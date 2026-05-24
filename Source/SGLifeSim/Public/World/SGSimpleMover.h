@@ -30,14 +30,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|City")
 	void ConfigureMover(FVector Direction, float Speed, float LoopLength);
 
+	/** 标记为「车辆」：会避让前车、遇红灯停（F 块交通）。行人不强求，默认 false。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|City")
+	void SetIsVehicle(bool bVehicle) { bIsVehicle = bVehicle; }
+
 	/** 暴露 mesh 让外部设占位外观（车身/行人）。 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|City")
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
 private:
+	/** 车辆是否该停：前方近处有别的移动体/玩家车，或正对红灯路口（F 块）。 */
+	bool ShouldStop() const;
+
 	FVector StartLocation = FVector::ZeroVector;
 	FVector MoveDir = FVector::ForwardVector;
 	float MoveSpeed = 200.f;     // cm/s
 	float Loop = 10000.f;        // cm
 	float Traveled = 0.f;        // 已走距离
+	bool bIsVehicle = false;     // 车才避让/看灯
 };

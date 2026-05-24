@@ -2,9 +2,12 @@
 #include "World/LocationRegistry.h"
 #include "World/LocationTypes.h"
 #include "World/SGBuildingEntrance.h"
+#include "World/SGSimpleMover.h"
+#include "World/SGTrafficLight.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
@@ -131,5 +134,61 @@ void USGCityPopulatorSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 			MC->SetStaticMesh(Cube);
 			MC->SetWorldScale3D(Spec.Scale);
 		}
+	}
+
+	// 交通系统（F 块）：主干道（X 轴、Y 轴中线）上摆红绿灯路口 + 车流。
+	PopulateTraffic(InWorld);
+}
+
+void USGCityPopulatorSubsystem::PopulateTraffic(UWorld& InWorld)
+{
+	FActorSpawnParameters P;
+	P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	// 几个主干道路口：每个路口摆一对相位相反的红绿灯（南北 vs 东西）。
+	const float RoadZ = 10.f;
+	const TArray<FVector> Junctions = { FVector(2000, 0, 0), FVector(-2000, 0, 0), FVector(0, 2000, 0), FVector(0, -2000, 0) };
+	for (const FVector& J : Junctions)
+	{
+		// 管东西向车流的灯（放路口侧旁），起始绿。
+		if (ASGTrafficLight* L1 = InWorld.SpawnActor<ASGTrafficLight>(ASGTrafficLight::StaticClass(), J + FVector(0, 260, RoadZ), FRotator::ZeroRotator, P))
+		{
+			L1->ConfigureLight(ETrafficPhase::Green);
+		}
+		// 管南北向车流的灯，起始红（与上面错开 → 一组绿时另一组红）。
+		if (ASGTrafficLight* L2 = InWorld.SpawnActor<ASGTrafficLight>(ASGTrafficLight::StaticClass(), J + FVector(260, 0, RoadZ), FRotator(0, 90, 0), P))
+		{
+			L2->ConfigureLight(ETrafficPhase::Red);
+		}
+	}
+
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	UMaterialInterface* CarMat = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/MI_Car.MI_Car"));
+
+	// 主干道车流：沿 X 轴（东西）和 Y 轴（南北）各放几辆 vehicle Mover，会避让前车、遇红灯停。
+	auto SpawnCar = [&](const FVector& Start, const FVector& Dir)
+	{
+		ASGSimpleMover* Car = InWorld.SpawnActor<ASGSimpleMover>(ASGSimpleMover::StaticClass(), Start, Dir.Rotation(), P);
+		if (!Car) { return; }
+		if (Cube && Car->Mesh)
+		{
+			Car->Mesh->SetStaticMesh(Cube);
+			Car->Mesh->SetWorldScale3D(FVector(4.f, 1.8f, 1.1f)); // 占位车身
+			Car->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly); // 可被射线/检测，不物理推挤
+			if (CarMat) { Car->Mesh->SetMaterial(0, CarMat); }
+		}
+		Car->ConfigureMover(Dir, /*Speed=*/450.f, /*LoopLength=*/12000.f);
+		Car->SetIsVehicle(true);
+	};
+
+	// 东西向（沿 +X），分布在 Y=0 主干道上、错开起点形成车队。
+	for (int32 i = 0; i < 4; ++i)
+	{
+		SpawnCar(FVector(-6000 + i * 1500.f, -60.f, 90.f), FVector(1, 0, 0));
+	}
+	// 南北向（沿 +Y），X=0 主干道。
+	for (int32 i = 0; i < 4; ++i)
+	{
+		SpawnCar(FVector(60.f, -6000 + i * 1500.f, 90.f), FVector(0, 1, 0));
 	}
 }

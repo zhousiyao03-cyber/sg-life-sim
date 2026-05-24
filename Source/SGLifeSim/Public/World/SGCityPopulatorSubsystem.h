@@ -42,4 +42,7 @@ public:
 
 private:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
+
+	/** 铺主干道交通（F 块）：路口红绿灯 + 沿主干道跑的车流（会避让/看灯）。 */
+	void PopulateTraffic(UWorld& InWorld);
 };
