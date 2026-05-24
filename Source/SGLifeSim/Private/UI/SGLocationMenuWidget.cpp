@@ -22,6 +22,8 @@
 #include "World/LocationRegistry.h"
 #include "World/SGDrivableCar.h"
 #include "Systems/EconomySubsystem.h"
+#include "Systems/WeaponSubsystem.h"
+#include "Systems/WeaponTypes.h"
 #include "Systems/EconomyTypes.h"
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
@@ -202,6 +204,14 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		DineOutButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnDineOutClicked);
+
+		BuyPistolButton = MakeButton(WidgetTree, TEXT("黑市买把手枪（$2k，鼠标左键开火 / R 换弹）"), TEXT("BuyPistolButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(BuyPistolButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		BuyPistolButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnBuyPistolClicked);
 
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
@@ -482,6 +492,30 @@ void USGLocationMenuWidget::OnDineOutClicked()
 	SetStatus(TEXT("吃了顿好的，心情 +15 ✓"));
 }
 
+void USGLocationMenuWidget::OnBuyPistolClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	UGameInstance* GI = PC ? PC->GetGameInstance() : nullptr;
+	UEconomySubsystem* Eco = GI ? GI->GetSubsystem<UEconomySubsystem>() : nullptr;
+	UWeaponSubsystem* Weapon = GI ? GI->GetSubsystem<UWeaponSubsystem>() : nullptr;
+	if (!Eco || !Weapon) { SetStatus(TEXT("买枪失败")); return; }
+
+	if (Weapon->GetWeapon() == EWeaponKind::Pistol)
+	{
+		SetStatus(TEXT("你已经有手枪了"));
+		return;
+	}
+
+	if (!Eco->TryWithdraw(ECurrencyAccount::Cash, 200000, TEXT("BuyPistol"))) // $2k
+	{
+		SetStatus(TEXT("现金不够买枪（$2k）"));
+		return;
+	}
+
+	Weapon->EquipWeapon(EWeaponKind::Pistol);
+	SetStatus(TEXT("搞到一把手枪，满弹！鼠标左键开火 / R 换弹 ✓"));
+}
+
 void USGLocationMenuWidget::OnCloseClicked()
 {
 	CloseMenu();
@@ -535,6 +569,7 @@ void USGLocationMenuWidget::RefreshButtonVisibility()
 	SetVis(ActivitiesButton, DailyVis);
 	SetVis(BuyCarButton, DailyVis);
 	SetVis(DineOutButton, DailyVis);
+	SetVis(BuyPistolButton, DailyVis);
 }
 
 void USGLocationMenuWidget::OnNightCommuteClicked()

@@ -68,6 +68,10 @@ protected:
 	UFUNCTION()
 	void OnDineOutClicked();
 
+	/** 黑市买手枪（C 块枪械）：花钱装备手枪、满弹。 */
+	UFUNCTION()
+	void OnBuyPistolClicked();
+
 	/** 鬼月深夜：进入夜归抉择（展开三个选项，藏起其余菜单项）。 */
 	UFUNCTION()
 	void OnNightCommuteClicked();
@@ -141,6 +145,10 @@ private:
 	/** 下馆子（消费，回心情）。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> DineOutButton;
+
+	/** 黑市买手枪（C 块枪械）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> BuyPistolButton;
 
 	/** 夜归抉择入口（仅鬼月深夜可见）。 */
 	UPROPERTY(Transient)

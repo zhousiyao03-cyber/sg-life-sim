@@ -33,6 +33,9 @@
 #include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/NightCommuteSubsystem.h"
 #include "Systems/PlayerVitalsSubsystem.h"
+#include "Systems/WeaponSubsystem.h"
+#include "Systems/WeaponTypes.h"
+#include "Systems/WantedSubsystem.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/SGStreetNPC.h"
 #include "Systems/SanitySubsystem.h"
@@ -260,6 +263,10 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 		// 出拳：legacy 动作 Punch（F）→ 近战打前方 StreetNPC。
 		PlayerInputComponent->BindAction(TEXT("Punch"), IE_Pressed, this, &ASGPlayerCharacter::Punch);
+
+		// 开火 / 换弹：legacy 动作 Fire（鼠标左键）/ Reload（R）（C 块枪械）。
+		PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ASGPlayerCharacter::Fire);
+		PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &ASGPlayerCharacter::ReloadWeapon);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
@@ -557,6 +564,16 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 					Vitals->GetHealth(), Vitals->GetMaxHealth());
 			}
 		}
+		// 武器/弹药（C 块 GTA）：持枪才显示「🔫 名 弹/匣」。
+		if (UWeaponSubsystem* Weapon = GI->GetSubsystem<UWeaponSubsystem>())
+		{
+			if (Weapon->HasGun())
+			{
+				Stats += FString::Printf(TEXT("  ·  🔫 %s %d/%d"),
+					*UEnum::GetDisplayValueAsText(Weapon->GetWeapon()).ToString(),
+					Weapon->GetAmmoInMag(), Weapon->GetMagSize());
+			}
+		}
 		HudWidget->SetStatsText(FText::FromString(Stats));
 	}
 
@@ -743,5 +760,82 @@ void ASGPlayerCharacter::Punch()
 			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }
 		});
 		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 1.f, /*bLoop=*/false);
+	}
+}
+
+void ASGPlayerCharacter::Fire()
+{
+	UGameInstance* GI = GetGameInstance();
+	UWeaponSubsystem* Weapon = GI ? GI->GetSubsystem<UWeaponSubsystem>() : nullptr;
+	if (!Weapon) { return; }
+
+	// 没枪：提示去搞一把（徒手用 F 出拳）。
+	if (!Weapon->HasGun())
+	{
+		if (HudWidget)
+		{
+			HudWidget->SetDialogueText(FText::FromString(TEXT("✋ 徒手——按 F 出拳，或先搞把枪")));
+			FTimerDelegate D = FTimerDelegate::CreateWeakLambda(this, [this]()
+			{ if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); } });
+			GetWorldTimerManager().SetTimer(DialogueClearTimer, D, 1.5f, false);
+		}
+		return;
+	}
+
+	int32 Damage = 0, WantedPerShot = 0; float Range = 0.f;
+	if (!Weapon->TryFire(Damage, Range, WantedPerShot))
+	{
+		// 弹匣空：提示换弹。
+		if (HudWidget)
+		{
+			HudWidget->SetDialogueText(FText::FromString(TEXT("🔫 没子弹了——按 R 换弹")));
+			FTimerDelegate D = FTimerDelegate::CreateWeakLambda(this, [this]()
+			{ if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); } });
+			GetWorldTimerManager().SetTimer(DialogueClearTimer, D, 1.5f, false);
+		}
+		return;
+	}
+
+	// 从相机（眼睛）沿视线射线，命中 StreetNPC 造成伤害。
+	const FVector Start = FirstPersonCamera ? FirstPersonCamera->GetComponentLocation() : GetActorLocation();
+	const FVector Dir = GetController() ? GetController()->GetControlRotation().Vector() : GetActorForwardVector();
+	const FVector End = Start + Dir * Range;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
+	{
+		if (ASGStreetNPC* Npc = Cast<ASGStreetNPC>(Hit.GetActor()))
+		{
+			Npc->TakeMeleeHit(Damage); // 复用通用受击入口（掉血 + 内部涨通缉）
+		}
+	}
+
+	// 开枪本身就是大事：额外涨通缉（哪怕没打中，街上听到枪声）。
+	if (UWantedSubsystem* Wanted = GI->GetSubsystem<UWantedSubsystem>())
+	{
+		Wanted->AddHeat(WantedPerShot);
+	}
+}
+
+void ASGPlayerCharacter::ReloadWeapon()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UWeaponSubsystem* Weapon = GI->GetSubsystem<UWeaponSubsystem>())
+		{
+			if (Weapon->HasGun())
+			{
+				Weapon->Reload();
+				if (HudWidget)
+				{
+					HudWidget->SetDialogueText(FText::FromString(TEXT("🔁 换弹")));
+					FTimerDelegate D = FTimerDelegate::CreateWeakLambda(this, [this]()
+					{ if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); } });
+					GetWorldTimerManager().SetTimer(DialogueClearTimer, D, 1.f, false);
+				}
+			}
+		}
 	}
 }

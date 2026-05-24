@@ -75,6 +75,12 @@ private:
 	/** 出拳键（F）：朝视线前方近战，打到 StreetNPC 造成伤害（第9块）。 */
 	void Punch();
 
+	/** 开火键（鼠标左键）：持枪时朝视线射线射击，命中 StreetNPC 扣血、涨通缉（C 块）。 */
+	void Fire();
+
+	/** 换弹键（R）：补满当前武器弹匣（C 块）。 */
+	void ReloadWeapon();
+
 	/** 进入攀爬：前方有墙才成立。关重力、贴墙。 */
 	void StartClimb();
 
