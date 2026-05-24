@@ -61,10 +61,22 @@ private:
 	/** 朝目标走一步：优先沿 NavMesh 路径折线，无导航则回退直线。 */
 	void ChaseTowards(const FVector& TargetLocation, float DeltaSeconds);
 
+	/** 远离某点逃跑一步（路人受惊，G 块）：朝背离方向走，沿 NavMesh 绕障碍。 */
+	void FleeFrom(const FVector& ThreatLocation, float DeltaSeconds);
+
+	/** 路人受惊：转入逃跑态，并作为目击者举报一次（涨通缉）。 */
+	void Panic();
+
 	EStreetNpcKind Kind = EStreetNpcKind::Pedestrian;
 	int32 Health = 100;
 	bool bDead = false;
 	float ChaseSpeed = 280.f; // cm/s
+	float FleeSpeed = 360.f;  // 逃跑比追捕快一点（吓坏了）
+
+	/** 路人是否已受惊逃跑（G 块）。一旦受惊持续逃离。 */
+	bool bAlarmed = false;
+	/** 受惊后剩余逃跑时间（秒），到点冷静（若威胁已远离）。 */
+	float FleeTimer = 0.f;
 
 	/** 当前缓存的寻路折线（世界坐标点）。 */
 	TArray<FVector> PathPoints;

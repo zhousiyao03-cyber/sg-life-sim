@@ -75,7 +75,34 @@ void ASGStreetNPC::TakeMeleeHit(int32 Damage)
 		// 占位「死亡」：倒地 + 隐藏碰撞。
 		SetActorRotation(FRotator(90.f, GetActorRotation().Yaw, 0.f));
 		if (Body) { Body->SetCollisionEnabled(ECollisionEnabled::NoCollision); }
+		return;
 	}
+
+	// 路人挨打但没死：受惊逃跑（G 块）。帮派/警察不逃（继续敌对/执法）。
+	if (Kind == EStreetNpcKind::Pedestrian)
+	{
+		Panic();
+	}
+}
+
+void ASGStreetNPC::Panic()
+{
+	const bool bWasCalm = !bAlarmed;
+	bAlarmed = true;
+	FleeTimer = 6.f; // 受惊后逃 6 秒
+
+	// 目击者举报：第一次受惊涨一笔通缉（路人看到有人动手/掏枪，报警）。
+	if (bWasCalm)
+	{
+		if (UGameInstance* GI = GetGameInstance())
+		{
+			if (UWantedSubsystem* W = GI->GetSubsystem<UWantedSubsystem>())
+			{
+				W->AddHeat(15);
+			}
+		}
+	}
+	PathPoints.Reset();
 }
 
 AActor* ASGStreetNPC::FindPlayer() const
@@ -92,12 +119,42 @@ void ASGStreetNPC::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (bDead) { return; }
 
-	// 警察：玩家有通缉就直线追；靠近就逮捕（清通缉）。帮派：直接敌对靠近。
-	const bool bChaser = (Kind == EStreetNpcKind::Police || Kind == EStreetNpcKind::Gangster);
-	if (!bChaser) { return; }
-
 	UGameInstance* GI = GetGameInstance();
 	UWantedSubsystem* W = GI ? GI->GetSubsystem<UWantedSubsystem>() : nullptr;
+
+	// 路人（G 块）：感知到危险就受惊逃跑。危险 = 玩家在通缉中（街上出事了）+ 离得近。
+	if (Kind == EStreetNpcKind::Pedestrian)
+	{
+		AActor* PlayerActor = FindPlayer();
+		if (PlayerActor)
+		{
+			const float DistToPlayer = (PlayerActor->GetActorLocation() - GetActorLocation()).Size2D();
+			// 玩家有通缉星且在视野近处 → 受惊（目击者举报在 Panic 里）。
+			if (!bAlarmed && W && W->GetStars() > 0 && DistToPlayer < 1500.f)
+			{
+				Panic();
+			}
+
+			if (bAlarmed)
+			{
+				FleeTimer -= DeltaSeconds;
+				// 威胁已远离且冷静计时到 → 恢复平静（停下，不再逃）。
+				if (FleeTimer <= 0.f && DistToPlayer > 2000.f)
+				{
+					bAlarmed = false;
+				}
+				else
+				{
+					FleeFrom(PlayerActor->GetActorLocation(), DeltaSeconds);
+				}
+			}
+		}
+		return;
+	}
+
+	// 警察：玩家有通缉就追；靠近逮捕（清通缉）。帮派：直接敌对靠近、贴近挥拳。
+	const bool bChaser = (Kind == EStreetNpcKind::Police || Kind == EStreetNpcKind::Gangster);
+	if (!bChaser) { return; }
 
 	bool bShouldChase = (Kind == EStreetNpcKind::Gangster); // 帮派总敌对
 	if (Kind == EStreetNpcKind::Police && W && W->GetStars() > 0)
@@ -192,4 +249,18 @@ void ASGStreetNPC::ChaseTowards(const FVector& TargetLocation, float DeltaSecond
 
 	AddActorWorldOffset(Dir * ChaseSpeed * DeltaSeconds, /*bSweep=*/true);
 	SetActorRotation(Dir.Rotation());
+}
+
+void ASGStreetNPC::FleeFrom(const FVector& ThreatLocation, float DeltaSeconds)
+{
+	// 朝背离威胁的水平方向跑（受惊乱跑，不做精细寻路；bSweep 防穿墙、撞墙自然贴墙滑）。
+	FVector Away = GetActorLocation() - ThreatLocation;
+	Away.Z = 0.f;
+	Away = Away.GetSafeNormal();
+	if (Away.IsNearlyZero())
+	{
+		Away = GetActorForwardVector(); // 重合时随便往前
+	}
+	AddActorWorldOffset(Away * FleeSpeed * DeltaSeconds, /*bSweep=*/true);
+	SetActorRotation(Away.Rotation());
 }
