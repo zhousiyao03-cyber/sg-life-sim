@@ -51,6 +51,10 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 		Save.HousingTier = Assets->GetHousingTier();
 		Save.VehicleTier = Assets->GetVehicleTier();
 		Save.InvestmentCents = Assets->GetInvestmentValue();
+		const FMortgage& M = Assets->GetAssets().GetMortgage();
+		Save.MortgageOutstandingCents = M.OutstandingPrincipalCents;
+		Save.MortgageAnnualRatePerMille = M.AnnualRatePerMille;
+		Save.MortgageMonthlyPrincipalCents = M.MonthlyPrincipalCents;
 	}
 	if (const UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
 	{
@@ -93,7 +97,8 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	}
 	if (UAssetsSubsystem* Assets = GI->GetSubsystem<UAssetsSubsystem>())
 	{
-		Assets->GetAssets().RestoreState(Save.HousingTier, Save.VehicleTier, Save.InvestmentCents);
+		Assets->GetAssets().RestoreState(Save.HousingTier, Save.VehicleTier, Save.InvestmentCents,
+			Save.MortgageOutstandingCents, Save.MortgageAnnualRatePerMille, Save.MortgageMonthlyPrincipalCents);
 	}
 	if (UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
 	{

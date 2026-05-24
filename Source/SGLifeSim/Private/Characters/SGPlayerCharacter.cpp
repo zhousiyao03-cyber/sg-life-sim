@@ -319,13 +319,22 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 			TimeSys->GetDayNumber(), *WeekdayText.ToString(), *BlockText.ToString())));
 	}
 
-	// 钱包行（现金 + 净资产）
+	// 钱包行（现金 + 净资产，有按揭时追加房贷余额）
 	if (UEconomySubsystem* Eco = GI ? GI->GetSubsystem<UEconomySubsystem>() : nullptr)
 	{
-		HudWidget->SetWalletText(FText::FromString(FString::Printf(
-			TEXT("现金 %s   ·   净资产 %s"),
+		FString Wallet = FString::Printf(TEXT("现金 %s   ·   净资产 %s"),
 			*FormatMoney(Eco->GetBalance(ECurrencyAccount::Cash)),
-			*FormatMoney(Eco->GetNetWorth()))));
+			*FormatMoney(Eco->GetNetWorth()));
+		if (UAssetsSubsystem* Assets = GI ? GI->GetSubsystem<UAssetsSubsystem>() : nullptr)
+		{
+			if (Assets->HasMortgage())
+			{
+				Wallet += FString::Printf(TEXT("   ·   房贷 %s（月供 %s）"),
+					*FormatMoney(Assets->GetMortgageBalance()),
+					*FormatMoney(Assets->GetMortgageMonthlyPayment()));
+			}
+		}
+		HudWidget->SetWalletText(FText::FromString(Wallet));
 	}
 
 	// 属性行（能量 / 心情 / 健康）

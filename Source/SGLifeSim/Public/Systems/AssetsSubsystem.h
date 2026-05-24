@@ -41,9 +41,31 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Assets")
 	int64 GetAssetNetWorthContribution() const { return Assets.GetAssetNetWorthContribution(); }
 
-	/** 买房：从现金扣该 tier 估值，成功才升级住房 tier。现金不足返回 false。 */
+	/** 买房（全款）：从现金扣该 tier 估值，成功才升级住房 tier。现金不足返回 false。 */
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Assets")
 	bool BuyHousing(EHousingTier Tier);
+
+	/**
+	 * 按揭买房（Plan 7）：首付 DownPaymentPercent% 从现金扣，余额开按揭。
+	 * 现金不够首付返回 false。成功则升 tier + 开贷，之后月初自动扣月供。
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Assets")
+	bool BuyHousingFinanced(EHousingTier Tier);
+
+	/** 提前一次性结清房贷：从现金扣（未还本金+当月利息），现金不足返回 false。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Assets")
+	bool PrepayMortgage();
+
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Assets")
+	bool HasMortgage() const { return Assets.HasMortgage(); }
+
+	/** 未还房贷本金（分）。 */
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Assets")
+	int64 GetMortgageBalance() const { return Assets.GetMortgage().OutstandingPrincipalCents; }
+
+	/** 当月房贷应付现金（分，本金+利息）。 */
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Assets")
+	int64 GetMortgageMonthlyPayment() const { return Assets.GetMortgage().PaymentDueCents(); }
 
 	/** 买车：从现金扣该 tier 估值，成功才升级车辆 tier。 */
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Assets")
@@ -63,6 +85,18 @@ public:
 	/** 月度投资回报率（千分比）。默认 +0.5%/月（约 6%/年）。 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SGLifeSim|Assets")
 	int32 MonthlyReturnPerMille = 5;
+
+	/** 按揭首付比例（%）。LTV 75% → 首付 25%，贴近 SG HDB/银行房贷。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SGLifeSim|Assets")
+	int32 DownPaymentPercent = 25;
+
+	/** 按揭年利率（千分比）。26 = 2.6%/年（HDB 优惠贷款档）。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SGLifeSim|Assets")
+	int32 MortgageAnnualRatePerMille = 26;
+
+	/** 按揭年限（月）。300 = 25 年。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SGLifeSim|Assets")
+	int32 MortgageTenureMonths = 300;
 
 	FAssetsSystem& GetAssets() { return Assets; }
 	const FAssetsSystem& GetAssets() const { return Assets; }

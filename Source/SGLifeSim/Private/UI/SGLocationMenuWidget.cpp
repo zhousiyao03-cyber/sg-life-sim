@@ -11,6 +11,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/GameInstance.h"
+#include "Systems/AssetsSubsystem.h"
+#include "Systems/AssetsTypes.h"
 #include "Systems/SaveGameSubsystem.h"
 
 namespace
@@ -103,6 +105,22 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		LoadButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnLoadClicked);
+
+		BuyHdbButton = MakeButton(WidgetTree, TEXT("按揭买组屋（首付 25%）"), TEXT("BuyHdbButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(BuyHdbButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 14.f, 0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		BuyHdbButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnBuyHdbFinancedClicked);
+
+		PrepayButton = MakeButton(WidgetTree, TEXT("提前还清房贷"), TEXT("PrepayButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(PrepayButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		PrepayButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnPrepayMortgageClicked);
 
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
@@ -214,6 +232,50 @@ void USGLocationMenuWidget::OnLoadClicked()
 		}
 	}
 	SetStatus(TEXT("读档失败"));
+}
+
+void USGLocationMenuWidget::OnBuyHdbFinancedClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (UAssetsSubsystem* Assets = GI->GetSubsystem<UAssetsSubsystem>())
+			{
+				if (Assets->GetHousingTier() == EHousingTier::OwnedHDB || Assets->HasMortgage())
+				{
+					SetStatus(TEXT("已有组屋 / 房贷"));
+					return;
+				}
+				const bool bOk = Assets->BuyHousingFinanced(EHousingTier::OwnedHDB);
+				SetStatus(bOk ? TEXT("已按揭购入组屋 ✓") : TEXT("首付不够，买不起"));
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("购房失败"));
+}
+
+void USGLocationMenuWidget::OnPrepayMortgageClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (UAssetsSubsystem* Assets = GI->GetSubsystem<UAssetsSubsystem>())
+			{
+				if (!Assets->HasMortgage())
+				{
+					SetStatus(TEXT("当前无房贷"));
+					return;
+				}
+				const bool bOk = Assets->PrepayMortgage();
+				SetStatus(bOk ? TEXT("已结清房贷 ✓") : TEXT("现金不够结清"));
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("操作失败"));
 }
 
 void USGLocationMenuWidget::OnCloseClicked()

@@ -63,12 +63,26 @@ int64 FAssetsSystem::GetAssetNetWorthContribution() const
 {
 	return HousingValuationCents(Housing)
 		+ VehicleValuationCents(Vehicle)
-		+ InvestmentCents;
+		+ InvestmentCents
+		- Mortgage.OutstandingPrincipalCents; // 未还房贷是负债
 }
 
-void FAssetsSystem::RestoreState(EHousingTier InHousing, EVehicleTier InVehicle, int64 InInvestmentCents)
+void FAssetsSystem::OpenMortgage(int64 PrincipalCents, int32 AnnualRatePerMille, int32 TenureMonths)
+{
+	Mortgage.OutstandingPrincipalCents = FMath::Max((int64)0, PrincipalCents);
+	Mortgage.AnnualRatePerMille = FMath::Max(0, AnnualRatePerMille);
+	// 等额本金：月供本金 = 原始贷款 / 年限（至少 1 分，避免 0 导致永远还不完）。
+	const int32 Months = FMath::Max(1, TenureMonths);
+	Mortgage.MonthlyPrincipalCents = FMath::Max((int64)1, Mortgage.OutstandingPrincipalCents / Months);
+}
+
+void FAssetsSystem::RestoreState(EHousingTier InHousing, EVehicleTier InVehicle, int64 InInvestmentCents,
+	int64 InMortgageOutstandingCents, int32 InMortgageRatePerMille, int64 InMortgageMonthlyPrincipalCents)
 {
 	Housing = InHousing;
 	Vehicle = InVehicle;
 	InvestmentCents = FMath::Max((int64)0, InInvestmentCents);
+	Mortgage.OutstandingPrincipalCents = FMath::Max((int64)0, InMortgageOutstandingCents);
+	Mortgage.AnnualRatePerMille = FMath::Max(0, InMortgageRatePerMille);
+	Mortgage.MonthlyPrincipalCents = FMath::Max((int64)0, InMortgageMonthlyPrincipalCents);
 }

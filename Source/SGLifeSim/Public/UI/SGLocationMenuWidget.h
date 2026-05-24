@@ -41,6 +41,14 @@ protected:
 	UFUNCTION()
 	void OnLoadClicked();
 
+	/** 按揭买组屋（首付从现金扣，余额开房贷）。 */
+	UFUNCTION()
+	void OnBuyHdbFinancedClicked();
+
+	/** 提前结清房贷。 */
+	UFUNCTION()
+	void OnPrepayMortgageClicked();
+
 	UFUNCTION()
 	void OnCloseClicked();
 
@@ -62,6 +70,12 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> LoadButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> BuyHdbButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> PrepayButton;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> CloseButton;

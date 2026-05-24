@@ -69,6 +69,16 @@ public:
 	UPROPERTY()
 	int64 InvestmentCents = 0;
 
+	// 房贷（Plan 7）
+	UPROPERTY()
+	int64 MortgageOutstandingCents = 0;
+
+	UPROPERTY()
+	int32 MortgageAnnualRatePerMille = 0;
+
+	UPROPERTY()
+	int64 MortgageMonthlyPrincipalCents = 0;
+
 	// --- Ending ---
 	UPROPERTY()
 	EEnding ChosenEnding = EEnding::None;

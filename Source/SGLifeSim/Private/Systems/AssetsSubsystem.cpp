@@ -32,18 +32,67 @@ void UAssetsSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNumber)
 	UTimeSubsystem* TimeSys = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTimeSubsystem>() : nullptr;
 	if (!TimeSys) { return; }
 
+	UEconomySubsystem* Eco = GetGameInstance() ? GetGameInstance()->GetSubsystem<UEconomySubsystem>() : nullptr;
+
 	const int32 CurrentMonth = TimeSys->GetMonthNumber();
-	bool bAccrued = false;
+	bool bChanged = false;
 	while (CurrentMonth > LastReturnMonth)
 	{
 		++LastReturnMonth;
 		Assets.AccrueInvestmentReturn(MonthlyReturnPerMille);
-		bAccrued = true;
+
+		// 月供：有按揭就强制扣现金（允许欠债 = 逾期，体现房贷焦虑，不 hard fail）。
+		if (Eco && Assets.HasMortgage())
+		{
+			const int64 Payment = Assets.GetMortgage().PayScheduledMonth();
+			Eco->GetEconomy().Charge(ECurrencyAccount::Cash, Payment, TEXT("Mortgage"));
+		}
+		bChanged = true;
 	}
-	if (bAccrued)
+	if (bChanged)
 	{
 		OnAssetsChanged.Broadcast();
 	}
+}
+
+bool UAssetsSubsystem::BuyHousingFinanced(EHousingTier Tier)
+{
+	UEconomySubsystem* Eco = GetGameInstance() ? GetGameInstance()->GetSubsystem<UEconomySubsystem>() : nullptr;
+	if (!Eco) { return false; }
+
+	const int64 Price = FAssetsSystem::HousingValuationCents(Tier);
+	if (Price <= 0)
+	{
+		return false; // 只有自购 tier 能按揭
+	}
+
+	const int64 DownPayment = Price * (int64)FMath::Clamp(DownPaymentPercent, 0, 100) / 100;
+	const int64 Loan = Price - DownPayment;
+
+	// 首付付得起才成交。
+	if (!Eco->TryWithdraw(ECurrencyAccount::Cash, DownPayment, TEXT("HousingDownPayment")))
+	{
+		return false;
+	}
+	Assets.SetHousingTier(Tier);
+	Assets.OpenMortgage(Loan, MortgageAnnualRatePerMille, MortgageTenureMonths);
+	OnAssetsChanged.Broadcast();
+	return true;
+}
+
+bool UAssetsSubsystem::PrepayMortgage()
+{
+	UEconomySubsystem* Eco = GetGameInstance() ? GetGameInstance()->GetSubsystem<UEconomySubsystem>() : nullptr;
+	if (!Eco || !Assets.HasMortgage()) { return false; }
+
+	const int64 Payoff = Assets.GetMortgage().PayoffAmountCents();
+	if (!Eco->TryWithdraw(ECurrencyAccount::Cash, Payoff, TEXT("MortgagePrepay")))
+	{
+		return false;
+	}
+	Assets.GetMortgage().Clear();
+	OnAssetsChanged.Broadcast();
+	return true;
 }
 
 bool UAssetsSubsystem::BuyHousing(EHousingTier Tier)
