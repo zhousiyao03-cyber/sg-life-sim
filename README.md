@@ -4,7 +4,22 @@
 
 ## 状态
 
-🚧 早期原型阶段（Engine Validation Prototype，Plan 1 执行中）
+🚧 早期原型阶段（Engine Validation Prototype）—— **核心竖切片已可玩**
+
+### 当前可玩内容（双击 uproject → Play 直接进出租屋）
+
+| 操作 | 效果 |
+|------|------|
+| WASD | 主角在场景内移动（等距正交相机跟随，移动播行走动画、静止播 idle） |
+| 走近 NPC | 屏幕显示「[E] 对话」提示 |
+| E | 与最近的 NPC 对话（屏幕显示台词） |
+| T | 推进一个时间块（HUD 显示 Day X · 周几 · 时间块，循环跨天跨周） |
+| M | 在出租屋 ↔ 食阁两个关卡间切换（时间状态跨关卡保留） |
+
+- 两个关卡：`L_Rental`（出租屋，暖色居家）/ `L_HawkerCenter`（食阁，开放摊位）
+- 核心系统在 C++（移动 / 等距相机 / locomotion / 交互 / 时间 / 场景切换），Blueprint 仅作薄壳
+- ⚠️ HUD / 对话 / 切换菜单目前用屏幕文本实现（当前工具链下 UMG 控件树不可自动化编辑），
+  详见 [引擎验证结果文档](docs/decisions/2026-05-23-engine-validation-outcome.md)
 
 ## 类型
 
