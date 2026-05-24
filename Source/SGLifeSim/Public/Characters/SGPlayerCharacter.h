@@ -4,7 +4,6 @@
 #include "GameFramework/Character.h"
 #include "SGPlayerCharacter.generated.h"
 
-class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
@@ -17,9 +16,12 @@ struct FInputActionValue;
 /**
  * 主角基类。spec §10.3「C++ 核心 + Blueprint 薄壳」。
  *
- * 移动（Enhanced Input WASD）与等距俯视相机都在 C++ 实现；Blueprint 子类
- * （BP_PlayerCharacter）只负责设 SkeletalMesh / AnimClass，并把 IMC/IA 资产
- * 引用赋给下面暴露的属性。
+ * 第一人称视角（贯穿始终）：相机挂在胶囊眼高、随控制器朝向转；鼠标转视角、
+ * WASD 相对视线方向移动。Blueprint 子类（BP_PlayerCharacter）只负责设 SkeletalMesh /
+ * AnimClass，并把 IMC/IA 资产引用赋给下面暴露的属性。
+ *
+ * 选第一人称：恐怖方向的固定视角 —— 受限视野（看不清、身后未知）天然出恐怖，
+ * 也让弱美术藏在黑暗 / 手电光锥 / 雾里。等距正交相机看得到全场，反恐怖，已弃用。
  */
 UCLASS()
 class SGLIFESIM_API ASGPlayerCharacter : public ACharacter
@@ -34,12 +36,9 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-	/** 等距相机吊臂。Pitch=-45/Yaw=-45 固定角度，正交投影。ADR 0003。 */
+	/** 第一人称相机：挂在胶囊眼高，bUsePawnControlRotation 随控制器朝向（鼠标）转。 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Camera")
-	TObjectPtr<USpringArmComponent> CameraBoom;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Camera")
-	TObjectPtr<UCameraComponent> IsometricCamera;
+	TObjectPtr<UCameraComponent> FirstPersonCamera;
 
 	/** 在 BP 子类里赋值为 IMC_Default。 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Input")

@@ -9,7 +9,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "InputActionValue.h"
 #include "Interactables/InteractableInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -52,33 +51,28 @@ ASGPlayerCharacter::ASGPlayerCharacter()
 	// 单节点 locomotion 需要每帧检查速度来切换 Idle/Walk
 	PrimaryActorTick.bCanEverTick = true;
 
-	// 等距固定视角：角色朝移动方向转，不跟随控制器朝向
+	// 第一人称：身体随控制器（鼠标）水平朝向转；俯仰只转相机不转身体。
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
-		MoveComp->bOrientRotationToMovement = true;
-		MoveComp->RotationRate = FRotator(0.f, 540.f, 0.f);
+		// 第一人称下身体跟视线，不再朝移动方向转。
+		MoveComp->bOrientRotationToMovement = false;
 	}
 
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 1200.f;
-	CameraBoom->bUsePawnControlRotation = false;
-	CameraBoom->bInheritPitch = false;
-	CameraBoom->bInheritYaw = false;
-	CameraBoom->bInheritRoll = false;
-	CameraBoom->SetRelativeRotation(FRotator(-45.f, -45.f, 0.f));
-	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->CameraLagSpeed = 10.f;
+	// 相机挂在胶囊眼高，自己吃控制器俯仰/偏航（鼠标视角）。
+	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
+	FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 64.f)); // 眼高
+	FirstPersonCamera->bUsePawnControlRotation = true;
 
-	IsometricCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("IsometricCamera"));
-	IsometricCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	IsometricCamera->ProjectionMode = ECameraProjectionMode::Orthographic;
-	IsometricCamera->OrthoWidth = 700.f;
-	IsometricCamera->bUsePawnControlRotation = false;
+	// 第一人称看不到自己那具（占位）身体；mesh 仍在（投影/未来镜面用），只是 owner 不可见。
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetOwnerNoSee(true);
+	}
 }
 
 void ASGPlayerCharacter::BeginPlay()
@@ -179,6 +173,11 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASGPlayerCharacter::Move);
 		}
+
+		// 第一人称鼠标视角：legacy 轴 Turn/LookUp（见 DefaultInput.ini）→ 控制器偏航/俯仰。
+		// EnhancedInputComponent 继承自 UInputComponent，legacy BindAxis 仍可用。
+		PlayerInputComponent->BindAxis(TEXT("Turn"), this, &APawn::AddControllerYawInput);
+		PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &APawn::AddControllerPitchInput);
 
 		// E / T / M：原型阶段动作引用尚未做成 UPROPERTY（避免热编译反射问题），
 		// 直接按固定路径加载并绑定。BeginPlay 已经把 IMC_Default 加进 Enhanced Input。
@@ -423,7 +422,16 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 void ASGPlayerCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D Axis = Value.Get<FVector2D>();
-	// 等距视角下，2D 输入直接映射到世界 X/Y 平面：X 左右，Y 前后
-	AddMovementInput(FVector(1.f, 0.f, 0.f), Axis.X);
-	AddMovementInput(FVector(0.f, 1.f, 0.f), Axis.Y);
+	const AController* Ctrl = GetController();
+	if (!Ctrl)
+	{
+		return;
+	}
+
+	// 第一人称：相对控制器（视线）水平朝向移动。Axis.Y 前后，Axis.X 左右。
+	const FRotator YawRotation(0.f, Ctrl->GetControlRotation().Yaw, 0.f);
+	const FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	AddMovementInput(Forward, Axis.Y);
+	AddMovementInput(Right, Axis.X);
 }

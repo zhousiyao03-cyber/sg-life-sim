@@ -10,7 +10,8 @@
 
 | 操作 | 效果 |
 |------|------|
-| WASD | 主角在场景内移动（等距正交相机跟随，移动播行走动画、静止播 idle） |
+| WASD | 第一人称移动（相对视线方向） |
+| 鼠标 | 第一人称转视角（平时锁定捕获；开菜单/对话时放出光标可点击） |
 | 走近 NPC | 屏幕显示「[E] 对话」提示 |
 | E | 与最近的 NPC 开对话面板（说话人 + 台词 + 可点选项；选项按好感门控、点击施加效果） |
 | T | 推进一个时间块（HUD 显示 Day X · 周几 · 时间块，循环跨天跨周） |
@@ -18,7 +19,8 @@
 
 - 两个关卡：`L_Rental`（出租屋，暖色居家）/ `L_HawkerCenter`（食阁，开放摊位带桌凳）
 - 4 个可对话 NPC（关卡加载时由 `USGWorldPopulatorSubsystem` 代码生成，免手摆 .umap）：出租屋有邻居 Ah Hua + 保安 Uncle Lim，食阁有阿姨 Ah Mei + 同事 Wei，各有独立性格 / 分支 / 好感奖励
-- 核心系统在 C++（移动 / 等距相机 / locomotion / 交互 / 时间 / 场景切换），Blueprint 仅作薄壳
+- 核心系统在 C++（第一人称移动 / 相机 / 鼠标视角 / 交互 / 时间 / 场景切换），Blueprint 仅作薄壳
+- **方向**：正转向**第一人称 + lo-fi 恐怖**（大框架/系统不变，恐怖按桥段插入农历七月/都市传说等）——见 [方向决策](docs/decisions/2026-05-24-first-person-horror-pivot.md)
 - UI 全用**纯 C++ UMG**（控件树在 C++ 里构造，无需 BP widget 资产）：`USGHudWidget`（顶部状态行 +
   底部交互提示 + 对话气泡）、`USGLocationMenuWidget`（M 键弹出的可点击地点菜单）。
   详见 [引擎验证结果文档](docs/decisions/2026-05-23-engine-validation-outcome.md)
