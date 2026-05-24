@@ -6,6 +6,7 @@
 #include "World/SGTrafficLight.h"
 #include "World/SGHelicopter.h"
 #include "World/SGDrivableCar.h"
+#include "World/SGPoliceStation.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -224,8 +225,8 @@ void USGCityPopulatorSubsystem::PopulateTraffic(UWorld& InWorld)
 			MC->SetMaterial(0, M);
 		}
 	};
-	// 警察局：蓝色大楼（MI_Car2 是蓝）。
-	SpawnLandmark(FVector(4000.f, -4000.f, 300.f), FVector(6.f, 6.f, 6.f), TEXT("/Game/Materials/MI_Car2.MI_Car2"));
+	// 警察局：可交互蓝楼（走近 E 缴保释金销案 / 治疗）。
+	InWorld.SpawnActor<ASGPoliceStation>(ASGPoliceStation::StaticClass(), FVector(4000.f, -4000.f, 300.f), FRotator::ZeroRotator, P);
 	// 帮派地盘：红色大楼（MI_Car 是红）——这一片也是帮派 NPC 聚集处。
 	SpawnLandmark(FVector(-4000.f, -4000.f, 300.f), FVector(6.f, 6.f, 6.f), TEXT("/Game/Materials/MI_Car.MI_Car"));
 }
