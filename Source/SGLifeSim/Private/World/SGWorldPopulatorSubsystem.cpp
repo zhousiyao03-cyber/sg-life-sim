@@ -41,6 +41,15 @@ TArray<FNpcSpawnSpec> USGWorldPopulatorSubsystem::GetRosterForLevel(const FStrin
 			TEXT("哟，也来这边吃啊？坐坐坐。"),
 			FVector(-280.f, 260.f, 0.f), 90.f);
 	}
+	else if (LevelName.Contains(TEXT("L_Office")))
+	{
+		// 公司：上司 Mr Tan（职场压力 + 升职门道）。
+		Roster.Emplace(
+			TEXT("ManagerTan"),
+			FText::FromString(TEXT("经理 Mr Tan")),
+			TEXT("手上的东西按时能交吧？我这边压力也很大的。"),
+			FVector(320.f, 0.f, 0.f), 180.f);
+	}
 
 	return Roster;
 }

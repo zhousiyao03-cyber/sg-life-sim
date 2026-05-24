@@ -4,6 +4,7 @@
 #include "Systems/HorrorSceneRegistry.h"
 #include "Systems/HorrorSceneTypes.h"
 #include "Systems/HorrorEventTypes.h"
+#include "Systems/HorrorEventSubsystem.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -37,6 +38,11 @@ bool FHorrorSceneRegistryTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("elevator level name"), Elev.LevelName, FName(TEXT("L_ElevatorHorror")));
 		TestEqual(TEXT("elevator sanity cost is 20"), Elev.SanityCost, 20);
 		TestEqual(TEXT("elevator codex = ElevatorGhostFloor"), Elev.CodexEntry, EHorrorEvent::ElevatorGhostFloor);
+
+		// 第二条链：末班地铁无倒影。
+		const FHorrorSceneDef Sub = FHorrorSceneRegistry::GetSceneDef(EHorrorScene::Subway);
+		TestEqual(TEXT("subway level name"), Sub.LevelName, FName(TEXT("L_SubwayHorror")));
+		TestEqual(TEXT("subway codex = MrtNoReflection"), Sub.CodexEntry, EHorrorEvent::MrtNoReflection);
 	}
 
 	// None 返回空定义。
@@ -51,7 +57,17 @@ bool FHorrorSceneRegistryTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("PIE-prefixed elevator level recognized"),
 		FHorrorSceneRegistry::IsHorrorSceneLevel(TEXT("UEDPIE_0_L_ElevatorHorror")));
 	TestFalse(TEXT("normal level not a horror scene"),
+		FHorrorSceneRegistry::IsHorrorSceneLevel(TEXT("L_SubwayHorror")) == false); // 地铁也是恐怖场景关卡
+	TestFalse(TEXT("rental not a horror scene"),
 		FHorrorSceneRegistry::IsHorrorSceneLevel(TEXT("L_Rental")));
+
+	// 事件 → 场景映射：电梯 / 地铁有专属场景，其余无。
+	TestEqual(TEXT("elevator event -> Elevator scene"),
+		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::ElevatorGhostFloor), EHorrorScene::Elevator);
+	TestEqual(TEXT("mrt event -> Subway scene"),
+		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::MrtNoReflection), EHorrorScene::Subway);
+	TestEqual(TEXT("ordinary event -> no scene"),
+		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::CorridorLights), EHorrorScene::None);
 
 	return true;
 }

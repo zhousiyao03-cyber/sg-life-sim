@@ -5,6 +5,7 @@
 #include "Systems/EconomyTypes.h"
 #include "Systems/TimeSubsystem.h"
 #include "Systems/SanitySubsystem.h"
+#include "Systems/CareerSubsystem.h"
 #include "World/LocationRegistry.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -58,18 +59,32 @@ bool UActivitySubsystem::PerformActivity(EActivityType Activity)
 		}
 	}
 
-	// 改现金。
-	if (Def.CashDeltaCents != 0)
+	// 改现金。上班（WorkShift）的收入按当前职业月薪折算的日薪走，而非定义里的固定值
+	// —— 升职涨薪能体现在上班收入上。月薪 / 22 个工作日；查不到职业则退回固定值。
+	int64 CashDelta = Def.CashDeltaCents;
+	if (Activity == EActivityType::WorkShift)
+	{
+		if (const UCareerSubsystem* Career = GI->GetSubsystem<UCareerSubsystem>())
+		{
+			const int64 Monthly = Career->GetGrossSalaryCents();
+			if (Monthly > 0)
+			{
+				CashDelta = Monthly / 22; // 一天的活
+			}
+		}
+	}
+
+	if (CashDelta != 0)
 	{
 		if (UEconomySubsystem* Eco = GI->GetSubsystem<UEconomySubsystem>())
 		{
-			if (Def.CashDeltaCents > 0)
+			if (CashDelta > 0)
 			{
-				Eco->Deposit(ECurrencyAccount::Cash, Def.CashDeltaCents, TEXT("Activity"));
+				Eco->Deposit(ECurrencyAccount::Cash, CashDelta, TEXT("Activity"));
 			}
 			else
 			{
-				Eco->GetEconomy().Charge(ECurrencyAccount::Cash, -Def.CashDeltaCents, TEXT("Activity"));
+				Eco->GetEconomy().Charge(ECurrencyAccount::Cash, -CashDelta, TEXT("Activity"));
 			}
 		}
 	}

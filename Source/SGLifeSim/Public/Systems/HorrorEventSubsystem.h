@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Systems/HorrorEventTypes.h"
+#include "Systems/HorrorSceneTypes.h"
 #include "Systems/TimeBlock.h"
 #include "Math/RandomStream.h"
 #include "HorrorEventSubsystem.generated.h"
@@ -51,6 +52,9 @@ public:
 	void SetSeed(int32 Seed) { Stream.Initialize(Seed); }
 
 	EHorrorEvent GetLastEvent() const { return LastEvent; }
+
+	/** 某恐怖事件对应的专属场景演出（None=无专属场景，走文案气泡）。加场景只改这映射。 */
+	static EHorrorScene SceneForEvent(EHorrorEvent Event);
 
 private:
 	UFUNCTION()

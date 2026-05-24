@@ -239,7 +239,50 @@ FDialogueTree SGDialogueContent::BuildColleagueWeiTree()
 	return Tree;
 }
 
+FDialogueTree SGDialogueContent::BuildManagerTanTree()
+{
+	const FText Speaker = FText::FromString(TEXT("经理 Mr Tan"));
+	const FName Npc = TEXT("ManagerTan");
+
+	// 汇报工作：刷一点专业存在感（好感小涨）。
+	FDialogueChoice Report = MakeChoice(TEXT("汇报一下手头的进度"), TEXT("report"));
+	Report.Effect.Type = EDialogueEffectType::AddAffinity;
+	Report.Effect.Target = Npc;
+	Report.Effect.Value = 2;
+
+	// 主动揽活：好感涨得多些（但你懂的，活也多了）。
+	FDialogueChoice Volunteer = MakeChoice(TEXT("主动接下那个烫手的项目"), TEXT("volunteer"));
+	Volunteer.Effect.Type = EDialogueEffectType::AddAffinity;
+	Volunteer.Effect.Target = Npc;
+	Volunteer.Effect.Value = 6;
+
+	// 好感够了，Mr Tan 透露升职门道。
+	FDialogueChoice Promo = MakeChoice(TEXT("私下问问升职到底看什么"), TEXT("promo"));
+	Promo.Condition.Type = EDialogueConditionType::MinAffinity;
+	Promo.Condition.Target = Npc;
+	Promo.Condition.Value = 50;
+
+	FDialogueTree Tree;
+	Tree.TreeId = Npc;
+	Tree.RootNodeId = TEXT("root");
+	Tree.Nodes = {
+		MakeNode(TEXT("root"), Speaker, TEXT("哦，是你。手上的东西按时能交吧？我这边压力也很大的。"),
+			{ Report, Volunteer, Promo, MakeEndChoice(TEXT("我先回去忙")) }),
+
+		MakeNode(TEXT("report"), Speaker, TEXT("嗯……进度还行。记住，做我们这行，按时交付比什么都重要。"),
+			{ MakeEndChoice(TEXT("明白")) }),
+
+		MakeNode(TEXT("volunteer"), Speaker, TEXT("好！有担当。年轻人就该多扛事——年底考核我记得你这份主动。"),
+			{ MakeEndChoice(TEXT("交给我")) }),
+
+		MakeNode(TEXT("promo"), Speaker, TEXT("跟你说句实在话：光埋头干没用，得让上面看见。专业过硬，再加点眼力见儿。"),
+			{ MakeEndChoice(TEXT("受教了，Mr Tan")) }),
+	};
+	return Tree;
+}
+
 TArray<FDialogueTree> SGDialogueContent::BuildAllTrees()
 {
-	return { BuildAhHuaTree(), BuildAhMeiTree(), BuildUncleLimTree(), BuildColleagueWeiTree() };
+	return { BuildAhHuaTree(), BuildAhMeiTree(), BuildUncleLimTree(), BuildColleagueWeiTree(),
+		BuildManagerTanTree() };
 }

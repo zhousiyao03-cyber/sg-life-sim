@@ -13,6 +13,14 @@ FHorrorSceneDef FHorrorSceneRegistry::GetSceneDef(EHorrorScene Scene)
 			TEXT("你瘫坐在自家门口，冷汗浸透后背。电梯早已停在一楼，门好端端地关着。"));
 		break;
 
+	case EHorrorScene::Subway:
+		D.LevelName = FName(TEXT("L_SubwayHorror"));
+		D.SanityCost = 18;
+		D.CodexEntry = EHorrorEvent::MrtNoReflection;
+		D.AftermathText = FText::FromString(
+			TEXT("地铁到站，门一开你几乎是冲出去的。站台空荡荡，可你不敢回头看那节车厢。"));
+		break;
+
 	case EHorrorScene::None:
 	default:
 		break;

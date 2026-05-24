@@ -16,6 +16,7 @@ enum class EHorrorScene : uint8
 {
 	None      UMETA(Hidden),
 	Elevator  UMETA(DisplayName = "电梯空楼层"),
+	Subway    UMETA(DisplayName = "末班地铁无倒影"),
 
 	Count     UMETA(Hidden),
 };

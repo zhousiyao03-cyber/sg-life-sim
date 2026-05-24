@@ -74,14 +74,15 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 	// 每天深夜必出一条恐怖事件（「无事」不入池）；抽哪条仍按权重随机，鬼月/幻觉门控照旧。
 	const EHorrorEvent Picked = FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity, /*bGuaranteeEvent=*/true);
 
-	// 电梯空楼层升级为真场景演出（Plan 24）：进电梯关卡，理智 / 图鉴由场景结算。
+	// 部分重磅事件升级为真场景演出（Plan 24+）：进专属关卡，理智 / 图鉴由场景结算。
 	// EnterScene 失败（无 World / 已在场景中）则退回常规 ApplyEvent，保证不漏处理。
-	if (Picked == EHorrorEvent::ElevatorGhostFloor)
+	const EHorrorScene Scene = SceneForEvent(Picked);
+	if (Scene != EHorrorScene::None)
 	{
 		if (UHorrorSequenceSubsystem* Seq = GetGameInstance()->GetSubsystem<UHorrorSequenceSubsystem>())
 		{
 			LastEvent = Picked;
-			if (Seq->EnterScene(EHorrorScene::Elevator))
+			if (Seq->EnterScene(Scene))
 			{
 				return;
 			}
@@ -89,6 +90,17 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 	}
 
 	ApplyEvent(Picked);
+}
+
+EHorrorScene UHorrorEventSubsystem::SceneForEvent(EHorrorEvent Event)
+{
+	// 哪些恐怖事件有专属场景演出（其余仍走文案气泡）。加场景只改这张映射。
+	switch (Event)
+	{
+	case EHorrorEvent::ElevatorGhostFloor: return EHorrorScene::Elevator;
+	case EHorrorEvent::MrtNoReflection:    return EHorrorScene::Subway;
+	default:                               return EHorrorScene::None;
+	}
 }
 
 bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)

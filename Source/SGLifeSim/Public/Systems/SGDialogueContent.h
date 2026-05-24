@@ -23,6 +23,9 @@ namespace SGDialogueContent
 	/** 同事 Wei（食阁午饭碰到，给职场建议，好感够了帮内推）。 */
 	SGLIFESIM_API FDialogueTree BuildColleagueWeiTree();
 
+	/** 公司经理 Mr Tan（上司，职场压力来源；好感够了透露升职门道）。 */
+	SGLIFESIM_API FDialogueTree BuildManagerTanTree();
+
 	/** 全部对话树。 */
 	SGLIFESIM_API TArray<FDialogueTree> BuildAllTrees();
 }

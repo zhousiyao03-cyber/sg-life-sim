@@ -25,7 +25,7 @@ bool FWorldPopulatorRosterTest::RunTest(const FString& Parameters)
 		TreeIds.Add(Tree.TreeId);
 	}
 
-	const TCHAR* Levels[] = { TEXT("L_Rental"), TEXT("L_HawkerCenter") };
+	const TCHAR* Levels[] = { TEXT("L_Rental"), TEXT("L_HawkerCenter"), TEXT("L_Office") };
 	int32 TotalSpawned = 0;
 	for (const TCHAR* Level : Levels)
 	{
@@ -53,6 +53,10 @@ bool FWorldPopulatorRosterTest::RunTest(const FString& Parameters)
 	const TArray<FNpcSpawnSpec> Rental = USGWorldPopulatorSubsystem::GetRosterForLevel(TEXT("L_Rental"));
 	const bool bHasUncle = Rental.ContainsByPredicate([](const FNpcSpawnSpec& S){ return S.NpcId == TEXT("UncleLim"); });
 	TestTrue(TEXT("rental block includes Uncle Lim"), bHasUncle);
+
+	const TArray<FNpcSpawnSpec> Office = USGWorldPopulatorSubsystem::GetRosterForLevel(TEXT("L_Office"));
+	const bool bHasTan = Office.ContainsByPredicate([](const FNpcSpawnSpec& S){ return S.NpcId == TEXT("ManagerTan"); });
+	TestTrue(TEXT("office includes Manager Tan"), bHasTan);
 
 	// PIE 前缀也要能匹配。
 	const TArray<FNpcSpawnSpec> Pie = USGWorldPopulatorSubsystem::GetRosterForLevel(TEXT("UEDPIE_0_L_HawkerCenter"));

@@ -49,6 +49,9 @@ Thumbs.db
 # FBX 导入时解出的贴图临时目录（.fbm），由源 .fbx 重新生成，不入库
 *.fbm/
 
+# 本地编译 / 测试日志（临时，跑完即弃）
+/*.log
+
 # 本地工具缓存
 /scripts/__pycache__/
 
