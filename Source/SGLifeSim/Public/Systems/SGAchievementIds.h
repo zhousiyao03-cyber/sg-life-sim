@@ -32,6 +32,9 @@ namespace SGAchievementIds
 	/** 集齐恐怖图鉴全部条目。 */
 	inline FName CompleteHorrorCodex() { return FName(TEXT("CompleteHorrorCodex")); }
 
+	/** 懂得敬畏：在七月禁忌博弈里做出守规矩的选择（等下一趟/走楼梯/绕开/拜一拜）。 */
+	inline FName RespectTheUnseen() { return FName(TEXT("RespectTheUnseen")); }
+
 	/** 净资产达成阈值（分）：$10,000。 */
 	inline constexpr int64 NetWorth10kThresholdCents = 1000000;
 }

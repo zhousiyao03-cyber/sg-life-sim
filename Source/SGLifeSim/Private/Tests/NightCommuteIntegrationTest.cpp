@@ -12,6 +12,8 @@
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/HorrorSequenceSubsystem.h"
 #include "Systems/HorrorSceneTypes.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/SGAchievementIds.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -63,19 +65,23 @@ bool FNightCommuteIntegrationTest::RunTest(const FString& Parameters)
 	UNightCommuteSubsystem* Commute = GI->GetSubsystem<UNightCommuteSubsystem>();
 	USanitySubsystem*       Sanity  = GI->GetSubsystem<USanitySubsystem>();
 	UPlayerStateSubsystem*  PS      = GI->GetSubsystem<UPlayerStateSubsystem>();
-	if (!Commute || !Sanity || !PS) { GI->Shutdown(); return false; }
+	UProgressSubsystem*     Prog    = GI->GetSubsystem<UProgressSubsystem>();
+	if (!Commute || !Sanity || !PS || !Prog) { GI->Shutdown(); return false; }
 
 	// 开局非鬼月深夜 → 不可触发。
 	TestFalse(TEXT("not available at game start (month 1, not late night)"), Commute->IsAvailable());
 
-	// 等下一趟：理智 +2、精力 -8。
+	// 等下一趟：理智 +2、精力 -8，且守规矩解锁「懂得敬畏」成就。
 	PS->SetAttribute(EPlayerAttribute::Energy, 80);
+	TestFalse(TEXT("no respect achievement yet"), Prog->HasAchieved(SGAchievementIds::RespectTheUnseen()));
 	const int32 SanityBeforeWait = Sanity->GetSanity();
 	Commute->MakeChoice(ENightCommuteChoice::WaitForNext);
 	TestEqual(TEXT("wait restores sanity +2"), Sanity->GetSanity(),
 		FMath::Min(100, SanityBeforeWait + FNightCommuteSystem::WaitSanityGain));
 	TestEqual(TEXT("wait costs energy 8"), PS->GetAttribute(EPlayerAttribute::Energy),
 		80 - FNightCommuteSystem::WaitEnergyCost);
+	TestTrue(TEXT("playing by the rules unlocks RespectTheUnseen"),
+		Prog->HasAchieved(SGAchievementIds::RespectTheUnseen()));
 
 	// 赶紧进去且赌输（Plan 24）：不再当场扣理智，而是「进电梯恐怖场景」——
 	// 理智 / 图鉴交由场景 ExitScene 结算。这里验证已进场景、且 MakeChoice 未当场扣理智。

@@ -12,6 +12,8 @@
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/HorrorEventTypes.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/SGAchievementIds.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -51,20 +53,24 @@ bool FRoadsideOfferingIntegrationTest::RunTest(const FString& Parameters)
 	USanitySubsystem*           San  = GI->GetSubsystem<USanitySubsystem>();
 	UPlayerStateSubsystem*      PS   = GI->GetSubsystem<UPlayerStateSubsystem>();
 	UHorrorCodexSubsystem*      Codex= GI->GetSubsystem<UHorrorCodexSubsystem>();
-	if (!Road || !San || !PS || !Codex) { GI->Shutdown(); return false; }
+	UProgressSubsystem*         Prog = GI->GetSubsystem<UProgressSubsystem>();
+	if (!Road || !San || !PS || !Codex || !Prog) { GI->Shutdown(); return false; }
 
 	// 开局非鬼月深夜 → 不可触发。
 	TestFalse(TEXT("not available at game start"), Road->IsAvailable());
 
-	// 拜一拜：理智 +8、精力 -5。
+	// 拜一拜：理智 +8、精力 -5，且守规矩解锁「懂得敬畏」成就。
 	San->Drain(40); // 留出回升空间
 	PS->SetAttribute(EPlayerAttribute::Energy, 80);
+	TestFalse(TEXT("no respect achievement yet"), Prog->HasAchieved(SGAchievementIds::RespectTheUnseen()));
 	const int32 SanityBeforePray = San->GetSanity();
 	Road->MakeChoice(ERoadsideOfferingChoice::PayRespects);
 	TestEqual(TEXT("pay respects restores sanity +8"), San->GetSanity(),
 		SanityBeforePray + FRoadsideOfferingSystem::PayRespectsSanityGain);
 	TestEqual(TEXT("pay respects costs energy 5"), PS->GetAttribute(EPlayerAttribute::Energy),
 		80 - FRoadsideOfferingSystem::PayRespectsEnergyCost);
+	TestTrue(TEXT("paying respects unlocks RespectTheUnseen"),
+		Prog->HasAchieved(SGAchievementIds::RespectTheUnseen()));
 
 	// 跨过去且赌输：理智重扣 20，图鉴记上冥纸禁忌。
 	San->RestoreFromSave(100);

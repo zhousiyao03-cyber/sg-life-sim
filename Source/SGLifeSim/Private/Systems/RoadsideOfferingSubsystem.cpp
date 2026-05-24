@@ -8,6 +8,8 @@
 #include "Systems/SanitySubsystem.h"
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/SGAchievementIds.h"
 
 void URoadsideOfferingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -71,6 +73,15 @@ FRoadsideOfferingOutcome URoadsideOfferingSubsystem::MakeChoice(ERoadsideOfferin
 		if (UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
 		{
 			Codex->RecordEncounter(EHorrorEvent::ZhiQianTaboo);
+		}
+	}
+
+	// 懂得敬畏：守规矩（不去赌的安全选项：绕开 / 拜一拜）首次达成解锁成就。
+	if (GI && (Choice == ERoadsideOfferingChoice::DetourAround || Choice == ERoadsideOfferingChoice::PayRespects))
+	{
+		if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
+		{
+			Prog->MarkAchieved(SGAchievementIds::RespectTheUnseen());
 		}
 	}
 

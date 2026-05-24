@@ -8,6 +8,8 @@
 #include "Systems/PlayerStatsTypes.h"
 #include "Systems/HorrorSequenceSubsystem.h"
 #include "Systems/HorrorSceneTypes.h"
+#include "Systems/ProgressSubsystem.h"
+#include "Systems/SGAchievementIds.h"
 
 void UNightCommuteSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -75,6 +77,15 @@ FNightCommuteOutcome UNightCommuteSubsystem::MakeChoice(ENightCommuteChoice Choi
 		{
 			if (Out.SanityDelta > 0) { San->Restore(Out.SanityDelta); }
 			else                     { San->Drain(-Out.SanityDelta); }
+		}
+	}
+
+	// 懂得敬畏：守规矩（不去赌的安全选项：等下一趟 / 走楼梯）首次达成解锁成就。
+	if (GI && (Choice == ENightCommuteChoice::WaitForNext || Choice == ENightCommuteChoice::TakeStairs))
+	{
+		if (UProgressSubsystem* Prog = GI->GetSubsystem<UProgressSubsystem>())
+		{
+			Prog->MarkAchieved(SGAchievementIds::RespectTheUnseen());
 		}
 	}
 
