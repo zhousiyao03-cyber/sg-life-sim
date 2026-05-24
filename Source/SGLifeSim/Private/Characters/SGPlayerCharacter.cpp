@@ -32,6 +32,7 @@
 #include "Systems/HorrorEventSubsystem.h"
 #include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/NightCommuteSubsystem.h"
+#include "Systems/PlayerVitalsSubsystem.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/SGStreetNPC.h"
 #include "Systems/SanitySubsystem.h"
@@ -149,6 +150,11 @@ void ASGPlayerCharacter::BeginPlay()
 		{
 			NightCommute->OnResolved.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleNightCommuteResolved);
 		}
+		if (UPlayerVitalsSubsystem* Vitals = GI->GetSubsystem<UPlayerVitalsSubsystem>())
+		{
+			Vitals->OnPlayerDied.AddUniqueDynamic(this, &ASGPlayerCharacter::HandlePlayerDied);
+			Vitals->OnPlayerRespawned.AddUniqueDynamic(this, &ASGPlayerCharacter::HandlePlayerRespawned);
+		}
 	}
 
 	// 从室内回到城市枢纽：把玩家从 PlayerStart 拉回离开时的建筑门口（只生效一次）。
@@ -167,6 +173,10 @@ void ASGPlayerCharacter::BeginPlay()
 			}
 		}
 	}
+
+	// 记录本关出生点（落点已最终确定）：死亡重生传送回此处。
+	SpawnLocation = GetActorLocation();
+	SpawnRotation = GetController() ? GetController()->GetControlRotation() : GetActorRotation();
 
 	// 起步先站立
 	UpdateLocomotionAnimation();
@@ -417,6 +427,33 @@ void ASGPlayerCharacter::HandleNightCommuteResolved(const FText& Message)
 	}
 }
 
+void ASGPlayerCharacter::HandlePlayerDied()
+{
+	// GTA 式重生：传送回本关出生点（黑屏淡入等演出待美术）。
+	// 攀爬态先退出，免得带着 MOVE_Flying 重生。
+	if (bClimbing) { StopClimb(); }
+	SetActorLocation(SpawnLocation);
+	if (AController* Ctrl = GetController())
+	{
+		Ctrl->SetControlRotation(SpawnRotation);
+	}
+}
+
+void ASGPlayerCharacter::HandlePlayerRespawned(int32 HospitalFeeCents)
+{
+	if (HudWidget)
+	{
+		const FString Msg = FString::Printf(
+			TEXT("🏥 你在医院醒来…医药费 %s"), *FormatMoney(HospitalFeeCents));
+		HudWidget->SetDialogueText(FText::FromString(Msg));
+		FTimerDelegate ClearDel = FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			if (HudWidget) { HudWidget->SetDialogueText(FText::GetEmpty()); }
+		});
+		GetWorldTimerManager().SetTimer(DialogueClearTimer, ClearDel, 6.f, /*bLoop=*/false);
+	}
+}
+
 void ASGPlayerCharacter::AdvanceTime()
 {
 	if (UGameInstance* GI = GetGameInstance())
@@ -510,6 +547,15 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 			Stats += FString::Printf(TEXT(" · 理智 %d（%s）"),
 				Sanity->GetSanity(),
 				*UEnum::GetDisplayValueAsText(Sanity->GetState()).ToString());
+		}
+		// 血量（B 块 GTA）：满血不打扰，受伤才用 ❤ 醒目提示。
+		if (UPlayerVitalsSubsystem* Vitals = GI->GetSubsystem<UPlayerVitalsSubsystem>())
+		{
+			if (Vitals->GetHealth() < Vitals->GetMaxHealth())
+			{
+				Stats += FString::Printf(TEXT("  ·  ❤ %d/%d"),
+					Vitals->GetHealth(), Vitals->GetMaxHealth());
+			}
 		}
 		HudWidget->SetStatsText(FText::FromString(Stats));
 	}

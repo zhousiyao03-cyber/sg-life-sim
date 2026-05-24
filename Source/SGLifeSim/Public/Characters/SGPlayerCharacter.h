@@ -128,6 +128,14 @@ private:
 	UFUNCTION()
 	void HandleNightCommuteResolved(const FText& Message);
 
+	/** 绑定到 UPlayerVitalsSubsystem::OnPlayerDied：把自己传送回出生点（GTA 式重生）。 */
+	UFUNCTION()
+	void HandlePlayerDied();
+
+	/** 绑定到 UPlayerVitalsSubsystem::OnPlayerRespawned：弹「在医院醒来，扣了医院费」气泡。 */
+	UFUNCTION()
+	void HandlePlayerRespawned(int32 HospitalFeeCents);
+
 	/** 绑定到 UEndingSubsystem::OnEndingChosen，盖结局演出 overlay。 */
 	UFUNCTION()
 	void HandleEndingChosen(EEnding Ending);
@@ -158,4 +166,8 @@ private:
 
 	/** 对话气泡 N 秒后自动消失的计时器。 */
 	FTimerHandle DialogueClearTimer;
+
+	/** 本关出生点（死亡重生传送回此处）。BeginPlay 记录玩家落地位置。 */
+	FVector SpawnLocation = FVector::ZeroVector;
+	FRotator SpawnRotation = FRotator::ZeroRotator;
 };

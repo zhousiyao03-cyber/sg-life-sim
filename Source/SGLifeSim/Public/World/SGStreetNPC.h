@@ -72,4 +72,7 @@ private:
 	int32 PathIndex = 0;
 	/** 距下次重算路径还剩多久（秒），目标在移动所以要周期性刷新。 */
 	float RepathCooldown = 0.f;
+
+	/** 近战攻击冷却（秒），帮派贴近玩家时按此节奏出手扣血。 */
+	float AttackCooldown = 0.f;
 };

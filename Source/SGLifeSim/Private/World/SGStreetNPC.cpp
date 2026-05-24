@@ -1,5 +1,6 @@
 #include "World/SGStreetNPC.h"
 #include "Systems/WantedSubsystem.h"
+#include "Systems/PlayerVitalsSubsystem.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -111,12 +112,29 @@ void ASGStreetNPC::Tick(float DeltaSeconds)
 	const FVector ToP = Player->GetActorLocation() - GetActorLocation();
 	const float Dist = ToP.Size2D();
 
-	// 靠得很近：警察逮捕（清通缉），帮派暂只贴近（伤害留待打斗扩展）。
+	AttackCooldown -= DeltaSeconds;
+
+	// 靠得很近：警察逮捕（清通缉），帮派挥拳扣玩家血（B 块打斗）。
 	if (Dist < 180.f)
 	{
+		// 面朝玩家。
+		FVector Face = ToP; Face.Z = 0.f; Face = Face.GetSafeNormal();
+		if (!Face.IsNearlyZero()) { SetActorRotation(Face.Rotation()); }
+
 		if (Kind == EStreetNpcKind::Police && W)
 		{
 			W->ClearWanted();
+		}
+		else if (Kind == EStreetNpcKind::Gangster && AttackCooldown <= 0.f)
+		{
+			AttackCooldown = 1.2f;
+			if (UGameInstance* GI2 = GetGameInstance())
+			{
+				if (UPlayerVitalsSubsystem* Vit = GI2->GetSubsystem<UPlayerVitalsSubsystem>())
+				{
+					Vit->ApplyDamage(12);
+				}
+			}
 		}
 		PathPoints.Reset();
 		return;
