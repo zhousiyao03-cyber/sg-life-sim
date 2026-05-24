@@ -14,6 +14,7 @@ enum class EActivityType : uint8
 	Exercise     UMETA(DisplayName = "健身"),
 	EatHawker    UMETA(DisplayName = "食阁吃饭"),
 	Gossip       UMETA(DisplayName = "听八卦"),
+	PrayPuja     UMETA(DisplayName = "拜拜祈福"),
 
 	Count        UMETA(Hidden)
 };
@@ -34,6 +35,9 @@ struct FActivityDef
 
 	/** 现金增减（分，正入负出）。 */
 	int64 CashDeltaCents = 0;
+
+	/** 理智增减（恐怖玩法：拜拜/睡觉回理智）。 */
+	int32 SanityDelta = 0;
 
 	int32 GetAttr(EPlayerAttribute Attr) const { return AttrDelta[(int32)Attr]; }
 };

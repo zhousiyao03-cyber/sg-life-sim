@@ -19,6 +19,7 @@ FActivityDef FActivitySystem::GetActivityDef(EActivityType Activity)
 		Def.TimeBlocks = 2;
 		SetDelta(Def, EPlayerAttribute::Energy, 60);
 		SetDelta(Def, EPlayerAttribute::Mood, 5);
+		Def.SanityDelta = 6; // 睡一觉，神经稍微稳一点
 		break;
 
 	case EActivityType::Study:
@@ -61,6 +62,16 @@ FActivityDef FActivitySystem::GetActivityDef(EActivityType Activity)
 		SetDelta(Def, EPlayerAttribute::Social, 3);
 		SetDelta(Def, EPlayerAttribute::Mood, 2);
 		SetDelta(Def, EPlayerAttribute::Energy, -5);
+		break;
+
+	case EActivityType::PrayPuja:
+		// 拜拜祈福（家里神台/上香）：很 SG，七月尤甚。强回理智、稳心情；
+		// 不耗能量，作为对抗恐惧螺旋的可靠手段（再累也拜得动）。
+		Def.Title = NSLOCTEXT("SGActivity", "Pray", "拜拜祈福（定心，回理智）");
+		Def.TimeBlocks = 1;
+		SetDelta(Def, EPlayerAttribute::Mood, 4);
+		Def.SanityDelta = 20;
+		Def.CashDeltaCents = -200; // 香火/供品 -$2
 		break;
 
 	default:

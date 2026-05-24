@@ -51,4 +51,23 @@ bool FActivityEnergyGateTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// 理智恢复手段（Plan 17）：拜拜祈福强回理智、不耗能量随时可做；睡觉也回一点。
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FActivitySanityTest,
+	"SGLifeSim.Activity.SanityRecovery",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FActivitySanityTest::RunTest(const FString& Parameters)
+{
+	const FActivityDef Pray = FActivitySystem::GetActivityDef(EActivityType::PrayPuja);
+	TestTrue(TEXT("pray restores sanity"), Pray.SanityDelta > 0);
+	TestEqual(TEXT("pray costs no energy"), Pray.GetAttr(EPlayerAttribute::Energy), 0);
+	TestTrue(TEXT("can always pray (no energy cost)"), FActivitySystem::CanPerform(Pray, 0));
+	TestEqual(TEXT("pray costs $2"), Pray.CashDeltaCents, (int64)-200);
+
+	const FActivityDef Sleep = FActivitySystem::GetActivityDef(EActivityType::Sleep);
+	TestTrue(TEXT("sleep restores some sanity"), Sleep.SanityDelta > 0);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -4,6 +4,7 @@
 #include "Systems/EconomySubsystem.h"
 #include "Systems/EconomyTypes.h"
 #include "Systems/TimeSubsystem.h"
+#include "Systems/SanitySubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 int32 UActivitySubsystem::GetCurrentEnergy() const
@@ -47,6 +48,15 @@ bool UActivitySubsystem::PerformActivity(EActivityType Activity)
 		}
 	}
 
+	// 改理智（拜拜/睡觉回理智 —— 对抗恐惧螺旋）。
+	if (Def.SanityDelta != 0)
+	{
+		if (USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
+		{
+			San->Restore(Def.SanityDelta);
+		}
+	}
+
 	// 改现金。
 	if (Def.CashDeltaCents != 0)
 	{
@@ -85,5 +95,7 @@ TArray<EActivityType> UActivitySubsystem::GetActivitiesForCurrentLevel() const
 	{
 		return { EActivityType::EatHawker, EActivityType::Gossip };
 	}
-	return { EActivityType::Sleep, EActivityType::Study, EActivityType::FreelanceCode, EActivityType::Exercise };
+	// 出租屋（含家里神台）：睡觉 / 学习 / 接私活 / 健身 / 拜拜祈福。
+	return { EActivityType::Sleep, EActivityType::Study, EActivityType::FreelanceCode,
+		EActivityType::Exercise, EActivityType::PrayPuja };
 }

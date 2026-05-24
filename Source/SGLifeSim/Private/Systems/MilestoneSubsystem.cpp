@@ -12,7 +12,7 @@
 
 namespace
 {
-	FString FormatMoney(int64 Cents)
+	FString MSFormatMoney(int64 Cents)
 	{
 		const TCHAR* Sign = (Cents < 0) ? TEXT("-") : TEXT("");
 		const int64 Abs = FMath::Abs(Cents);
@@ -144,7 +144,7 @@ FText UMilestoneSubsystem::GetActiveObjectiveText()
 	if (P.bIsNumeric)
 	{
 		Line += FString::Printf(TEXT("（%s / %s）"),
-			*FormatMoney(P.CurrentCents), *FormatMoney(P.TargetCents));
+			*MSFormatMoney(P.CurrentCents), *MSFormatMoney(P.TargetCents));
 	}
 
 	Line += FString::Printf(TEXT("   ·   已完成 %d/%d"), Done, Total);
