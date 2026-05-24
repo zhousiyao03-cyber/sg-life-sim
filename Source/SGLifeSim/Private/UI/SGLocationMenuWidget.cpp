@@ -20,6 +20,14 @@
 #include "UI/SGActivityMenuWidget.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/LocationRegistry.h"
+#include "World/SGDrivableCar.h"
+#include "Systems/EconomySubsystem.h"
+#include "Systems/EconomyTypes.h"
+#include "Systems/PlayerStateSubsystem.h"
+#include "Systems/PlayerStatsTypes.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 
 namespace
 {
@@ -177,6 +185,23 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		ActivitiesButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnDoActivitiesClicked);
+
+		// 消费（第8块）：买车 / 下馆子，给钱更多出口。
+		BuyCarButton = MakeButton(WidgetTree, TEXT("买辆车（$50k）"), TEXT("BuyCarButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(BuyCarButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 14.f, 0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		BuyCarButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnBuyCarClicked);
+
+		DineOutButton = MakeButton(WidgetTree, TEXT("下馆子犒劳自己（$80，回心情）"), TEXT("DineOutButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(DineOutButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		DineOutButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnDineOutClicked);
 
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
@@ -411,6 +436,52 @@ void USGLocationMenuWidget::OnDoActivitiesClicked()
 	}
 }
 
+void USGLocationMenuWidget::OnBuyCarClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	UGameInstance* GI = PC ? PC->GetGameInstance() : nullptr;
+	UEconomySubsystem* Eco = GI ? GI->GetSubsystem<UEconomySubsystem>() : nullptr;
+	if (!Eco) { SetStatus(TEXT("买车失败")); return; }
+
+	// 50k = 5,000,000 分
+	if (!Eco->TryWithdraw(ECurrencyAccount::Cash, 5000000, TEXT("BuyCar")))
+	{
+		SetStatus(TEXT("现金不够买车（$50k）"));
+		return;
+	}
+
+	// 在玩家身旁生成一辆可驾驶车。
+	if (UWorld* World = GI->GetWorld())
+	{
+		if (APawn* Pawn = PC->GetPawn())
+		{
+			const FVector Spawn = Pawn->GetActorLocation() + Pawn->GetActorForwardVector() * 350.f + FVector(0,0,50);
+			FActorSpawnParameters P; P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			World->SpawnActor<ASGDrivableCar>(ASGDrivableCar::StaticClass(), Spawn, FRotator::ZeroRotator, P);
+		}
+	}
+	SetStatus(TEXT("买到车了！走近按 E 上车 ✓"));
+}
+
+void USGLocationMenuWidget::OnDineOutClicked()
+{
+	APlayerController* PC = GetOwningPlayer();
+	UGameInstance* GI = PC ? PC->GetGameInstance() : nullptr;
+	UEconomySubsystem* Eco = GI ? GI->GetSubsystem<UEconomySubsystem>() : nullptr;
+	if (!Eco) { SetStatus(TEXT("操作失败")); return; }
+
+	if (!Eco->TryWithdraw(ECurrencyAccount::Cash, 8000, TEXT("DineOut"))) // $80
+	{
+		SetStatus(TEXT("现金不够下馆子（$80）"));
+		return;
+	}
+	if (UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
+	{
+		PS->ModifyAttribute(EPlayerAttribute::Mood, +15);
+	}
+	SetStatus(TEXT("吃了顿好的，心情 +15 ✓"));
+}
+
 void USGLocationMenuWidget::OnCloseClicked()
 {
 	CloseMenu();
@@ -462,6 +533,8 @@ void USGLocationMenuWidget::RefreshButtonVisibility()
 	SetVis(PromoteButton, DailyVis);
 	SetVis(JobHopButton, DailyVis);
 	SetVis(ActivitiesButton, DailyVis);
+	SetVis(BuyCarButton, DailyVis);
+	SetVis(DineOutButton, DailyVis);
 }
 
 void USGLocationMenuWidget::OnNightCommuteClicked()

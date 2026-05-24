@@ -60,6 +60,14 @@ protected:
 	UFUNCTION()
 	void OnDoActivitiesClicked();
 
+	/** 买车（第8块消费）：花钱在城市生成一辆可驾驶车，停玩家身旁。 */
+	UFUNCTION()
+	void OnBuyCarClicked();
+
+	/** 下馆子（第8块消费）：花钱回心情。 */
+	UFUNCTION()
+	void OnDineOutClicked();
+
 	/** 鬼月深夜：进入夜归抉择（展开三个选项，藏起其余菜单项）。 */
 	UFUNCTION()
 	void OnNightCommuteClicked();
@@ -125,6 +133,14 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> ActivitiesButton;
+
+	/** 买车（消费）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> BuyCarButton;
+
+	/** 下馆子（消费，回心情）。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> DineOutButton;
 
 	/** 夜归抉择入口（仅鬼月深夜可见）。 */
 	UPROPERTY(Transient)
