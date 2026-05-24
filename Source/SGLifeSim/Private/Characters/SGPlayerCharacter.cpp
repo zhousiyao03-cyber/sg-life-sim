@@ -1,7 +1,9 @@
 #include "Characters/SGPlayerCharacter.h"
 
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -10,7 +12,8 @@
 
 ASGPlayerCharacter::ASGPlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// 单节点 locomotion 需要每帧检查速度来切换 Idle/Walk
+	PrimaryActorTick.bCanEverTick = true;
 
 	// 等距固定视角：角色朝移动方向转，不跟随控制器朝向
 	bUseControllerRotationPitch = false;
@@ -37,7 +40,7 @@ ASGPlayerCharacter::ASGPlayerCharacter()
 	IsometricCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("IsometricCamera"));
 	IsometricCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	IsometricCamera->ProjectionMode = ECameraProjectionMode::Orthographic;
-	IsometricCamera->OrthoWidth = 1500.f;
+	IsometricCamera->OrthoWidth = 700.f;
 	IsometricCamera->bUsePawnControlRotation = false;
 }
 
@@ -58,6 +61,48 @@ void ASGPlayerCharacter::BeginPlay()
 				}
 			}
 		}
+	}
+
+	// 起步先站立
+	UpdateLocomotionAnimation();
+}
+
+void ASGPlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	UpdateLocomotionAnimation();
+}
+
+void ASGPlayerCharacter::UpdateLocomotionAnimation()
+{
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!MeshComp)
+	{
+		return;
+	}
+
+	// 动画引用正路是 BP 子类赋值；但若为空（如 Live Coding 未刷新反射、
+	// 新 UPROPERTY 尚未生效），用固定资产路径兜底加载，保证 demo 能跑。
+	UAnimSequence* Idle = IdleAnim;
+	UAnimSequence* Walk = WalkAnim;
+	if (!Idle)
+	{
+		Idle = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Characters/Player/Animations/A_Idle.A_Idle"));
+	}
+	if (!Walk)
+	{
+		Walk = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Characters/Player/Animations/A_Walk.A_Walk"));
+	}
+
+	// 只看水平速度，竖直分量（落地/跳跃）不算「走」
+	const float HorizontalSpeed = GetVelocity().Size2D();
+	const float Threshold = (WalkSpeedThreshold > 0.f) ? WalkSpeedThreshold : 10.f;
+	UAnimSequence* DesiredAnim = (HorizontalSpeed > Threshold) ? Walk : Idle;
+
+	if (DesiredAnim && DesiredAnim != CurrentAnim)
+	{
+		MeshComp->PlayAnimation(DesiredAnim, /*bLooping=*/true);
+		CurrentAnim = DesiredAnim;
 	}
 }
 

@@ -8,6 +8,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class UAnimSequence;
 struct FInputActionValue;
 
 /**
@@ -27,6 +28,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	/** 等距相机吊臂。Pitch=-45/Yaw=-45 固定角度，正交投影。ADR 0003。 */
@@ -44,7 +46,28 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Input")
 	TObjectPtr<UInputAction> MoveAction;
 
+	/**
+	 * 单节点 locomotion（spec §10.3）：不挂 AnimBlueprint，直接在 C++ 里按速度
+	 * 切换播放下面两个序列。BP 子类把它们赋为 A_Idle / A_Walk。
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Animation")
+	TObjectPtr<UAnimSequence> IdleAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Animation")
+	TObjectPtr<UAnimSequence> WalkAnim;
+
+	/** 速度高于此阈值视为「在走」，低于则「站立」。cm/s。 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Animation")
+	float WalkSpeedThreshold = 10.f;
+
 private:
 	/** IA_Move 的 Triggered 回调：把 2D 输入映射到世界 X/Y 平面移动。 */
 	void Move(const FInputActionValue& Value);
+
+	/** 按当前水平速度在 Idle / Walk 间切换单节点播放，避免每帧重复 Play。 */
+	void UpdateLocomotionAnimation();
+
+	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
+	UPROPERTY(Transient)
+	TObjectPtr<UAnimSequence> CurrentAnim;
 };
