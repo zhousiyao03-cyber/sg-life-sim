@@ -50,15 +50,18 @@ Blueprint 仅作薄壳（BP_PlayerCharacter 设资产引用）。配合 UE5 MCP 
 
 ## 已知限制 / 与原 plan 的偏差
 
-1. **UMG widget**（已基本解决，2026-05-24 补）。MCP/Python 不能编辑 BP 控件树
+1. **UMG widget**（已解决，2026-05-24 补）。MCP/Python 不能编辑 BP 控件树
    （widget-authoring 子动作不在 schema；Python 不暴露 WidgetTree），但**绕开 BP、纯 C++ 写 UMG 可行**：
-   `USGHudWidget : UUserWidget` 在 `RebuildWidget()` 里用 `WidgetTree->ConstructWidget` 搭控件树，
-   `ASGPlayerCharacter` `CreateWidget + AddToViewport`。已替换原来的屏幕文本：
-   - HUD 状态行（左上）：「Day X · 周几 · 时间块 + 操作提示」
-   - 交互提示 + 对话气泡（底部）：靠近显示「[E] 对话」，交互显示 NPC 台词、5 秒消失
-   - 场景切换：M 直接跳转（仍未做弹出菜单，原型够用）
-   做这步需**关编辑器完整 rebuild**（新 UCLASS 反射 Live Coding 不刷新）——本次已编译通过。
-   仅剩"切换菜单"这类交互式 widget（按钮/列表）未做，留待真正需要时。
+   `UUserWidget` 子类在 `RebuildWidget()` 里用 `WidgetTree->ConstructWidget` 搭控件树，
+   `CreateWidget + AddToViewport`。已替换原来的全部屏幕文本：
+   - `USGHudWidget`：HUD 状态行（左上「Day X · 周几 · 时间块 + 操作提示」）+ 交互提示 +
+     对话气泡（底部，靠近显示「[E] 对话」，交互显示 NPC 台词、5 秒消失）
+   - `USGLocationMenuWidget`：M 键弹出的**可点击地点菜单**（居中面板 + 出租屋/食阁/取消按钮，
+     按钮 `OnClicked` 绑 C++ handler → OpenLevel；打开切 GameAndUI 输入模式 + 显示鼠标）——
+     这验证了交互式 UMG（按钮/点击/输入模式）也能纯 C++ 做。
+   坑：① code-only widget 经 CreateWidget 时 `WidgetTree` 为空，`RebuildWidget` 要兜底 `NewObject<UWidgetTree>`，
+   否则整张 widget 不渲染；② 新 UCLASS 反射 Live Coding 不刷新，需关编辑器完整 rebuild。
+   **UMG 三件套（W_HUD/W_DialogueBox/W_LocationMenu）等效功能全部做齐。**
 
 2. **场景命名**：用 `L_Rental` / `L_HawkerCenter`（plan 原写 `L_Apartment`，等价）。
 
@@ -81,5 +84,10 @@ Blueprint 仅作薄壳（BP_PlayerCharacter 设资产引用）。配合 UE5 MCP 
 - **编辑器视口截图只在窗口前台可见时才渲染**：后台时 `control_editor screenshot` 永不落盘（或全黑）。
   截图前用 PowerShell + Win32 `SetForegroundWindow` 把编辑器拉到前台即可正常落盘。两关卡最终观感
   （出租屋暖木地板+家具、食阁 teal 桌配凳+深色摊位柜台）就是这样补拍确认的。
+- **UE 截图路径（`control_editor screenshot` / `HighResShot` / `take_high_res_screenshot`）都只抓 3D 场景、
+  剔除 Slate/UMG 叠层**——验证 UMG 是否渲染不能靠它们。解法：**Windows 桌面截图**
+  （PowerShell `System.Drawing.Graphics.CopyFromScreen` 抓屏）能抓到真实渲染的 UI。配合 Python
+  `widget.add_to_viewport()` 把 widget 塞进 PIE 视口，就能截到 HUD/菜单实际长相。HUD 状态行就是这样
+  视觉确认渲染正常的（注意会被其他窗口遮挡，必要时先最小化遮挡窗口）。
 - **灯光过曝排查**：DirectionalLight intensity 偏高（食阁原为 10）+ 无手动曝光 → 自动曝光把浅色地板冲成纯白。
   统一方案：directional ~3.0 暖白 + 一个 unbound PostProcessVolume 设 manual exposure（EV 11），两关卡观感一致可控。
