@@ -27,6 +27,12 @@ public:
 	bool TryWithdraw(ECurrencyAccount Account, int64 Cents, FName Reason);
 
 	/**
+	 * 无条件扣费（分）：余额不足也照扣，可变负数 = 欠债。
+	 * 用于固定账单（房租/水电）这类「该交就得交」的支出。spec §5.3。
+	 */
+	void Charge(ECurrencyAccount Account, int64 Cents, FName Reason);
+
+	/**
 	 * 按月发薪。spec §6.2 CPF 规则（55 岁以下默认费率）：
 	 * - 雇员自付 20% → 进 CPF（OA/SA/MA 按 0.62 / 0.16 / 0.22 分配）
 	 * - 雇主额外 17% → 也进 CPF（同比例分配），不从工资里扣

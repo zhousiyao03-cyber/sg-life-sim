@@ -56,3 +56,32 @@ struct FMoneyTransaction
 	{
 	}
 };
+
+/**
+ * 月度收支配置。spec §5.3 / §6.2。
+ *
+ * 数据驱动：每月 1 号结算时用到的工资 + 固定账单（分）。默认值取新加坡现实量级
+ * （HDB 单间房租 $800、水电 $150、交通 $120、CBD 程序员税前 $5000）。
+ * 后续可换 DataTable 按职业 / 住房类型调。
+ */
+USTRUCT(BlueprintType)
+struct FMonthlyFinance
+{
+	GENERATED_BODY()
+
+	/** 税前月薪（分）。默认 $5000。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	int64 SalaryGrossCents = 500000;
+
+	/** 房租（分）。默认 HDB 单间 $800。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	int64 RentCents = 80000;
+
+	/** 水电（分）。默认 $150。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	int64 UtilitiesCents = 15000;
+
+	/** 交通（分）。默认 $120。 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	int64 TransportCents = 12000;
+};

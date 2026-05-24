@@ -29,6 +29,12 @@ public:
 	/** 当前是周几。 */
 	EWeekday GetWeekday() const;
 
+	/** 当前是第几个月（从 1 开始）。spec §5.3 月度账单/发薪用。 */
+	int32 GetMonthNumber() const;
+
+	/** 当前是本月第几天（从 1 开始）。== 1 即「每月 1 号」。 */
+	int32 GetDayOfMonth() const;
+
 	/** 自游戏开始累计的总时间块数（测试用 / 存档用）。 */
 	int32 GetTotalBlocks() const { return TotalBlocksSinceStart; }
 
@@ -38,4 +44,6 @@ private:
 
 	static constexpr int32 BlocksPerDay = 5;
 	static constexpr int32 DaysPerWeek = 7;
+	// 一个月 = 4 周（28 天），让每月固定从周一开始，月度数学干净。spec §5.3。
+	static constexpr int32 DaysPerMonth = 28;
 };

@@ -52,6 +52,15 @@ bool FEconomySystem::TryWithdraw(ECurrencyAccount Account, int64 Cents, FName Re
 	return true;
 }
 
+void FEconomySystem::Charge(ECurrencyAccount Account, int64 Cents, FName Reason)
+{
+	if (Cents <= 0)
+	{
+		return;
+	}
+	RecordChange(Account, -Cents, Reason);  // 允许变负（欠债）
+}
+
 void FEconomySystem::DistributeCpf(int64 TotalCpfCents, FName Reason)
 {
 	if (TotalCpfCents <= 0)

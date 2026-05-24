@@ -115,4 +115,38 @@ bool FEconomyNetWorthTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FEconomyChargeAllowsDebtTest,
+	"SGLifeSim.Economy.ChargeAllowsDebt",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEconomyChargeAllowsDebtTest::RunTest(const FString& Parameters)
+{
+	FEconomySystem Sys;
+	// 现金为 0，账单照扣 → 变负（欠债），区别于 TryWithdraw
+	Sys.Charge(ECurrencyAccount::Cash, Dollars(100), TEXT("Rent"));
+	TestEqual(TEXT("charge into debt: cash = -$100"), Sys.GetBalance(ECurrencyAccount::Cash), Dollars(-100));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FEconomyMonthlySettlementTest,
+	"SGLifeSim.Economy.MonthlySettlement",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEconomyMonthlySettlementTest::RunTest(const FString& Parameters)
+{
+	// 复现 UEconomySubsystem::RunMonthlySettlement 的纯 C++ 部分（默认配置）
+	FEconomySystem Sys;
+	Sys.ApplyMonthlySalary(Dollars(5000));                 // 到手现金 $4000
+	Sys.Charge(ECurrencyAccount::Cash, Dollars(800), TEXT("Rent"));
+	Sys.Charge(ECurrencyAccount::Cash, Dollars(150), TEXT("Utilities"));
+	Sys.Charge(ECurrencyAccount::Cash, Dollars(120), TEXT("Transport"));
+
+	// $4000 − ($800+$150+$120) = $2930
+	TestEqual(TEXT("cash after month settlement = $2930"),
+		Sys.GetBalance(ECurrencyAccount::Cash), Dollars(2930));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

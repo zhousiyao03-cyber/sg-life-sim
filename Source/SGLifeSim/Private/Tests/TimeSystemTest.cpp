@@ -84,4 +84,27 @@ bool FTimeSystemTotalBlocksTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FTimeSystemMonthRolloverTest,
+	"SGLifeSim.TimeSystem.MonthRollover",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FTimeSystemMonthRolloverTest::RunTest(const FString& Parameters)
+{
+	FTimeSystem Sys;  // 第 1 天
+	TestEqual(TEXT("start: month 1"), Sys.GetMonthNumber(), 1);
+	TestEqual(TEXT("start: day-of-month 1"), Sys.GetDayOfMonth(), 1);
+
+	// 推进到第 28 天（27 天 = 135 个 block），月内最后一天
+	for (int32 i = 0; i < 27 * 5; ++i) { Sys.AdvanceBlock(); }
+	TestEqual(TEXT("day 28: still month 1"), Sys.GetMonthNumber(), 1);
+	TestEqual(TEXT("day 28: day-of-month 28"), Sys.GetDayOfMonth(), 28);
+
+	// 再推进一天 → 第 29 天，跨入第 2 月 1 号
+	for (int32 i = 0; i < 5; ++i) { Sys.AdvanceBlock(); }
+	TestEqual(TEXT("day 29: month 2"), Sys.GetMonthNumber(), 2);
+	TestEqual(TEXT("day 29: day-of-month 1"), Sys.GetDayOfMonth(), 1);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

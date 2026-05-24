@@ -20,3 +20,13 @@ EWeekday UTimeSubsystem::GetWeekday() const
 {
 	return Time.GetWeekday();
 }
+
+int32 UTimeSubsystem::GetMonthNumber() const
+{
+	return Time.GetMonthNumber();
+}
+
+int32 UTimeSubsystem::GetDayOfMonth() const
+{
+	return Time.GetDayOfMonth();
+}

@@ -1,4 +1,59 @@
 #include "Systems/EconomySubsystem.h"
+#include "Systems/TimeSubsystem.h"
+
+void UEconomySubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+
+	// 保证 TimeSubsystem 先于本系统初始化，然后订阅其时间推进事件。
+	Collection.InitializeDependency(UTimeSubsystem::StaticClass());
+	if (UTimeSubsystem* TimeSys = GetGameInstance()->GetSubsystem<UTimeSubsystem>())
+	{
+		TimeSys->OnTimeAdvanced.AddDynamic(this, &UEconomySubsystem::HandleTimeAdvanced);
+		LastSettledMonth = TimeSys->GetMonthNumber();  // 游戏起始月不补发
+	}
+}
+
+void UEconomySubsystem::Deinitialize()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UTimeSubsystem* TimeSys = GI->GetSubsystem<UTimeSubsystem>())
+		{
+			TimeSys->OnTimeAdvanced.RemoveDynamic(this, &UEconomySubsystem::HandleTimeAdvanced);
+		}
+	}
+	Super::Deinitialize();
+}
+
+void UEconomySubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNumber)
+{
+	UTimeSubsystem* TimeSys = GetGameInstance() ? GetGameInstance()->GetSubsystem<UTimeSubsystem>() : nullptr;
+	if (!TimeSys)
+	{
+		return;
+	}
+
+	// 跨入新月 → 月度结算。可能一次推进跨多月（理论上）：循环补齐。
+	const int32 CurrentMonth = TimeSys->GetMonthNumber();
+	while (CurrentMonth > LastSettledMonth)
+	{
+		++LastSettledMonth;
+		RunMonthlySettlement();
+	}
+}
+
+void UEconomySubsystem::RunMonthlySettlement()
+{
+	// 发薪（含 CPF 分账）
+	ApplyMonthlySalary(MonthlyFinance.SalaryGrossCents);
+
+	// 扣固定账单（现金，允许欠债）
+	Economy.Charge(ECurrencyAccount::Cash, MonthlyFinance.RentCents, TEXT("Rent"));
+	Economy.Charge(ECurrencyAccount::Cash, MonthlyFinance.UtilitiesCents, TEXT("Utilities"));
+	Economy.Charge(ECurrencyAccount::Cash, MonthlyFinance.TransportCents, TEXT("Transport"));
+	NotifyBalance(ECurrencyAccount::Cash);
+}
 
 int64 UEconomySubsystem::GetBalance(ECurrencyAccount Account) const
 {

@@ -40,6 +40,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Time")
 	EWeekday GetWeekday() const;
 
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Time")
+	int32 GetMonthNumber() const;
+
+	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Time")
+	int32 GetDayOfMonth() const;
+
 	/** 订阅这个 delegate 接收时间推进通知。 */
 	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Time")
 	FOnTimeAdvanced OnTimeAdvanced;
