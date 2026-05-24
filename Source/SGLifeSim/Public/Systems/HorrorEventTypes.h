@@ -17,6 +17,7 @@ enum class EHorrorEvent : uint8
 	MrtNoReflection      UMETA(DisplayName = "地铁里没有倒影的人"),
 	ChangiHospitalTale   UMETA(DisplayName = "旧樟宜医院的传闻"),
 	DeportationNightmare UMETA(DisplayName = "被遣返的噩梦"),
+	MallAfterHours       UMETA(DisplayName = "打烊后的商场"),
 	ZhiQianTaboo         UMETA(DisplayName = "七月冥纸禁忌"),       // 鬼月限定
 	KopiWarning          UMETA(DisplayName = "咖啡店的提醒"),       // 鬼月限定
 	Pontianak            UMETA(DisplayName = "组屋楼下的白影"),     // 鬼月限定，稀有

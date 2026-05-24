@@ -99,6 +99,8 @@ EHorrorScene UHorrorEventSubsystem::SceneForEvent(EHorrorEvent Event)
 	{
 	case EHorrorEvent::ElevatorGhostFloor: return EHorrorScene::Elevator;
 	case EHorrorEvent::MrtNoReflection:    return EHorrorScene::Subway;
+	case EHorrorEvent::NeighbourEmptyFlat: return EHorrorScene::Corridor;
+	case EHorrorEvent::MallAfterHours:     return EHorrorScene::Mall;
 	default:                               return EHorrorScene::None;
 	}
 }

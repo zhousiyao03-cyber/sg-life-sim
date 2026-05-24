@@ -29,6 +29,10 @@ FHorrorEventDef FHorrorEventSystem::GetEventDef(EHorrorEvent Event)
 		D.Title = FText::FromString(TEXT("你梦见准证被吊销、被押上飞机。惊醒时一身冷汗，下意识去摸护照。"));
 		D.MoodDelta = -5; D.HealthDelta = -3; D.SanityCost = 7; D.Weight = 7;
 		break;
+	case EHorrorEvent::MallAfterHours:
+		D.Title = FText::FromString(TEXT("商场打烊后，你被锁在里头。所有灯都灭了，可那道扶梯，还在自己往上运。"));
+		D.MoodDelta = -5; D.SanityCost = 8; D.Weight = 6;
+		break;
 
 	// —— 鬼月限定 ——
 	case EHorrorEvent::ZhiQianTaboo:

@@ -43,6 +43,16 @@ bool FHorrorSceneRegistryTest::RunTest(const FString& Parameters)
 		const FHorrorSceneDef Sub = FHorrorSceneRegistry::GetSceneDef(EHorrorScene::Subway);
 		TestEqual(TEXT("subway level name"), Sub.LevelName, FName(TEXT("L_SubwayHorror")));
 		TestEqual(TEXT("subway codex = MrtNoReflection"), Sub.CodexEntry, EHorrorEvent::MrtNoReflection);
+
+		// 第三条链：组屋楼道空屋。
+		const FHorrorSceneDef Cor = FHorrorSceneRegistry::GetSceneDef(EHorrorScene::Corridor);
+		TestEqual(TEXT("corridor level name"), Cor.LevelName, FName(TEXT("L_CorridorHorror")));
+		TestEqual(TEXT("corridor codex = NeighbourEmptyFlat"), Cor.CodexEntry, EHorrorEvent::NeighbourEmptyFlat);
+
+		// 第四条链：打烊后的商场。
+		const FHorrorSceneDef Mall = FHorrorSceneRegistry::GetSceneDef(EHorrorScene::Mall);
+		TestEqual(TEXT("mall level name"), Mall.LevelName, FName(TEXT("L_MallHorror")));
+		TestEqual(TEXT("mall codex = MallAfterHours"), Mall.CodexEntry, EHorrorEvent::MallAfterHours);
 	}
 
 	// None 返回空定义。
@@ -66,6 +76,10 @@ bool FHorrorSceneRegistryTest::RunTest(const FString& Parameters)
 		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::ElevatorGhostFloor), EHorrorScene::Elevator);
 	TestEqual(TEXT("mrt event -> Subway scene"),
 		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::MrtNoReflection), EHorrorScene::Subway);
+	TestEqual(TEXT("empty-flat event -> Corridor scene"),
+		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::NeighbourEmptyFlat), EHorrorScene::Corridor);
+	TestEqual(TEXT("mall event -> Mall scene"),
+		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::MallAfterHours), EHorrorScene::Mall);
 	TestEqual(TEXT("ordinary event -> no scene"),
 		UHorrorEventSubsystem::SceneForEvent(EHorrorEvent::CorridorLights), EHorrorScene::None);
 

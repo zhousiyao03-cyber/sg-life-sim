@@ -21,6 +21,22 @@ FHorrorSceneDef FHorrorSceneRegistry::GetSceneDef(EHorrorScene Scene)
 			TEXT("地铁到站，门一开你几乎是冲出去的。站台空荡荡，可你不敢回头看那节车厢。"));
 		break;
 
+	case EHorrorScene::Corridor:
+		D.LevelName = FName(TEXT("L_CorridorHorror"));
+		D.SanityCost = 16;
+		D.CodexEntry = EHorrorEvent::NeighbourEmptyFlat;
+		D.AftermathText = FText::FromString(
+			TEXT("你冲进自家屋里反锁了门。隔壁那间，明明空了半年——拖椅子的声音，停了。"));
+		break;
+
+	case EHorrorScene::Mall:
+		D.LevelName = FName(TEXT("L_MallHorror"));
+		D.SanityCost = 17;
+		D.CodexEntry = EHorrorEvent::MallAfterHours;
+		D.AftermathText = FText::FromString(
+			TEXT("保安终于来开了门。你说不出话，只是回头看了眼那道——此刻已经停住的——扶梯。"));
+		break;
+
 	case EHorrorScene::None:
 	default:
 		break;
