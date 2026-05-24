@@ -80,9 +80,35 @@ struct FDialogueChoice
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue")
 	FDialogueCondition Condition;
 
-	/** 选中时施加的效果。 */
+	/** 选中时施加的（主）效果。单效果选项只用这个即可（向后兼容）。 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue")
 	FDialogueEffect Effect;
+
+	/**
+	 * 额外效果。一个选项可同时产生多个副作用（如「被信着」同时回理智 + 加好感），
+	 * 不必再拆成两个选项。施加顺序：先 Effect，再依次 ExtraEffects。
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue")
+	TArray<FDialogueEffect> ExtraEffects;
+
+	/** 收集本选项的全部生效效果（主 + 额外），跳过 None / EndDialogue（无副作用）。 */
+	TArray<FDialogueEffect> CollectEffects() const
+	{
+		TArray<FDialogueEffect> Out;
+		auto AddIfMeaningful = [&Out](const FDialogueEffect& E)
+		{
+			if (E.Type != EDialogueEffectType::None && E.Type != EDialogueEffectType::EndDialogue)
+			{
+				Out.Add(E);
+			}
+		};
+		AddIfMeaningful(Effect);
+		for (const FDialogueEffect& E : ExtraEffects)
+		{
+			AddIfMeaningful(E);
+		}
+		return Out;
+	}
 };
 
 /** 一个对话节点。 */

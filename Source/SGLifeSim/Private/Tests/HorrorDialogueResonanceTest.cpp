@@ -8,6 +8,7 @@
 #include "Systems/HorrorEventSubsystem.h"
 #include "Systems/HorrorEventTypes.h"
 #include "Systems/SanitySubsystem.h"
+#include "Systems/RelationshipSubsystem.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -43,11 +44,12 @@ bool FHorrorDialogueResonanceTest::RunTest(const FString& Parameters)
 	if (!GI) { return false; }
 	GI->InitializeStandalone();
 
-	UDialogueSubsystem*    Dlg    = GI->GetSubsystem<UDialogueSubsystem>();
-	UHorrorEventSubsystem* Horror = GI->GetSubsystem<UHorrorEventSubsystem>();
-	UHorrorCodexSubsystem* Codex  = GI->GetSubsystem<UHorrorCodexSubsystem>();
-	USanitySubsystem*      Sanity = GI->GetSubsystem<USanitySubsystem>();
-	if (!Dlg || !Horror || !Codex || !Sanity) { GI->Shutdown(); return false; }
+	UDialogueSubsystem*     Dlg    = GI->GetSubsystem<UDialogueSubsystem>();
+	UHorrorEventSubsystem*  Horror = GI->GetSubsystem<UHorrorEventSubsystem>();
+	UHorrorCodexSubsystem*  Codex  = GI->GetSubsystem<UHorrorCodexSubsystem>();
+	USanitySubsystem*       Sanity = GI->GetSubsystem<USanitySubsystem>();
+	URelationshipSubsystem* Rel    = GI->GetSubsystem<URelationshipSubsystem>();
+	if (!Dlg || !Horror || !Codex || !Sanity || !Rel) { GI->Shutdown(); return false; }
 
 	// 未亲历电梯空楼层：开 Uncle Lim 对话，「坦白」分支不可见。
 	TestTrue(TEXT("start UncleLim dialogue"), Dlg->StartDialogue(TEXT("UncleLim")));
@@ -66,13 +68,16 @@ bool FHorrorDialogueResonanceTest::RunTest(const FString& Parameters)
 	const int32 ConfideIdx = FindChoiceContaining(Dlg, TEXT("空楼层的电梯，我前几天真的碰到了"));
 	TestTrue(TEXT("confide visible after encounter"), ConfideIdx >= 0);
 
-	// 选它进入 confide 节点，再选「被人信着」回理智 +12。
+	// 选它进入 confide 节点，再选「踏实」——一个选项同时回理智 +12 与加好感 +6（多效果）。
+	const int32 UncleAffBefore = Rel->GetAffinity(TEXT("UncleLim"));
 	TestTrue(TEXT("choose confide"), Dlg->ChooseOption(ConfideIdx));
-	const int32 ReassureIdx = FindChoiceContaining(Dlg, TEXT("被人信着"));
+	const int32 ReassureIdx = FindChoiceContaining(Dlg, TEXT("踏实"));
 	TestTrue(TEXT("reassure choice present"), ReassureIdx >= 0);
 	TestTrue(TEXT("choose reassure"), Dlg->ChooseOption(ReassureIdx));
 
 	TestEqual(TEXT("sanity restored by +12"), Sanity->GetSanity(), SanityBefore + 12);
+	TestEqual(TEXT("affinity also raised +6 (multi-effect)"),
+		Rel->GetAffinity(TEXT("UncleLim")), UncleAffBefore + 6);
 	TestFalse(TEXT("dialogue ended after reassure"), Dlg->IsDialogueActive());
 
 	// —— AhMei 共鸣（七月冥纸禁忌）：长辈安抚回理智 +10 ——
@@ -86,14 +91,18 @@ bool FHorrorDialogueResonanceTest::RunTest(const FString& Parameters)
 	Sanity->Drain(40);
 	const int32 AhMeiSanityBefore = Sanity->GetSanity();
 
+	const int32 AhMeiAffBefore = Rel->GetAffinity(TEXT("AhMei"));
 	TestTrue(TEXT("restart AhMei dialogue"), Dlg->StartDialogue(TEXT("AhMei")));
 	const int32 AhMeiConfide = FindChoiceContaining(Dlg, TEXT("冥纸"));
 	TestTrue(TEXT("AhMei confide visible after encounter"), AhMeiConfide >= 0);
 	TestTrue(TEXT("choose AhMei confide"), Dlg->ChooseOption(AhMeiConfide));
-	const int32 AhMeiReassure = FindChoiceContaining(Dlg, TEXT("安心"));
+	const int32 AhMeiReassure = FindChoiceContaining(Dlg, TEXT("安稳"));
 	TestTrue(TEXT("AhMei reassure present"), AhMeiReassure >= 0);
 	TestTrue(TEXT("choose AhMei reassure"), Dlg->ChooseOption(AhMeiReassure));
+	// 一个选项同时回理智 +10 与加好感 +5（多效果）。
 	TestEqual(TEXT("AhMei restored sanity +10"), Sanity->GetSanity(), AhMeiSanityBefore + 10);
+	TestEqual(TEXT("AhMei affinity also raised +5 (multi-effect)"),
+		Rel->GetAffinity(TEXT("AhMei")), AhMeiAffBefore + 5);
 
 	// —— Wei 共鸣（末班地铁无倒影）：同龄人打岔回理智 +6 ——
 	TestTrue(TEXT("start Wei dialogue"), Dlg->StartDialogue(TEXT("Wei")));

@@ -30,10 +30,18 @@ public:
 
 	/**
 	 * 选择某选项（原始下标）。校验激活 + 下标合法 + 条件满足。
-	 * 成功：OutEffect = 该选项效果；跳到 NextNodeId（None/EndDialogue/目标缺失则结束）。
+	 * 成功：OutEffect = 该选项主效果；跳到 NextNodeId（None/EndDialogue/目标缺失则结束）。
 	 * @return 成功返回 true；否则 false 且不改状态。
+	 * @note 单效果便利重载。多效果选项请用返回 TArray 的重载，否则只拿到主效果。
 	 */
 	bool TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator, FDialogueEffect& OutEffect);
+
+	/**
+	 * 同上，但产出该选项的全部生效效果（主 + 额外，跳过 None/EndDialogue）。
+	 * 一个选项可同时回理智 + 加好感等，不必拆成两个选项。
+	 * @return 成功返回 true；否则 false 且不改状态。
+	 */
+	bool TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator, TArray<FDialogueEffect>& OutEffects);
 
 	/** 强制结束。 */
 	void End() { bActive = false; }

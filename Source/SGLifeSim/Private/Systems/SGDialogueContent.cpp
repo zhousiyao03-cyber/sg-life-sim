@@ -144,16 +144,15 @@ FDialogueTree SGDialogueContent::BuildAhMeiTree()
 
 		MakeNode(TEXT("confide"), Speaker, TEXT("哎哟傻孩子，碰到就碰到了，心里别慌。阿姨教你：回去洗个澡，换身衣服，啊。没事的，阿姨在这看着呢。"),
 			{ [Npc]() {
-				FDialogueChoice C = MakeEndChoice(TEXT("（阿姨的语气让你安心了些）"));
+				// 阿姨的安抚一次抚平两件事：心安（回理智）+ 亲近（加好感）。
+				FDialogueChoice C = MakeEndChoice(TEXT("谢谢阿姨，我记住了……心里安稳多了"));
 				C.Effect.Type = EDialogueEffectType::AddSanity;
 				C.Effect.Value = 10;
-				return C;
-			}(),
-			  [Npc]() {
-				FDialogueChoice C = MakeEndChoice(TEXT("谢谢阿姨，我记住了"));
-				C.Effect.Type = EDialogueEffectType::AddAffinity;
-				C.Effect.Target = Npc;
-				C.Effect.Value = 5;
+				FDialogueEffect Aff;
+				Aff.Type = EDialogueEffectType::AddAffinity;
+				Aff.Target = Npc;
+				Aff.Value = 5;
+				C.ExtraEffects.Add(Aff);
 				return C;
 			}() }),
 	};
@@ -216,17 +215,15 @@ FDialogueTree SGDialogueContent::BuildUncleLimTree()
 
 		MakeNode(TEXT("confide"), Speaker, TEXT("……我就知道。你眼神不对，我看了十几年门，看得出来。来，坐。叔叔信你，不是你疯了。"),
 			{ [Npc]() {
-				FDialogueChoice C = MakeEndChoice(TEXT("（被人信着，心里踏实了些）"));
-				// 一个选项目前只挂一个效果，这里取「安抚回理智」为主；好感在下面那条给。
+				// 被人郑重信着，一次抚平两件事：心安（回理智）+ 拉近距离（加好感）。
+				FDialogueChoice C = MakeEndChoice(TEXT("谢谢 Uncle……被你这么一说，心里踏实多了"));
 				C.Effect.Type = EDialogueEffectType::AddSanity;
 				C.Effect.Value = 12;
-				return C;
-			}(),
-			  [Npc]() {
-				FDialogueChoice C = MakeEndChoice(TEXT("谢谢 Uncle，真的"));
-				C.Effect.Type = EDialogueEffectType::AddAffinity;
-				C.Effect.Target = Npc;
-				C.Effect.Value = 6;
+				FDialogueEffect Aff;
+				Aff.Type = EDialogueEffectType::AddAffinity;
+				Aff.Target = Npc;
+				Aff.Value = 6;
+				C.ExtraEffects.Add(Aff);
 				return C;
 			}() }),
 	};

@@ -166,12 +166,15 @@ bool UDialogueSubsystem::ChooseOption(int32 VisibleIndex)
 		return false;
 	}
 
-	FDialogueEffect Effect;
-	if (!Dialogue.TryChoose(Available[VisibleIndex], Eval, Effect))
+	TArray<FDialogueEffect> Effects;
+	if (!Dialogue.TryChoose(Available[VisibleIndex], Eval, Effects))
 	{
 		return false;
 	}
-	ApplyEffect(Effect);
+	for (const FDialogueEffect& Effect : Effects)
+	{
+		ApplyEffect(Effect);
+	}
 	OnDialogueChanged.Broadcast();
 	return true;
 }

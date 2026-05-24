@@ -141,4 +141,55 @@ bool FDialogueRejectsGatedChoiceTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+// 一个选项挂多个效果：新 TArray 重载产出全部，旧单效果重载只拿主效果（向后兼容）。
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FDialogueMultiEffectTest,
+	"SGLifeSim.Dialogue.ChoiceEmitsMultipleEffects",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FDialogueMultiEffectTest::RunTest(const FString& Parameters)
+{
+	// root 一个选项：主效果加好感 +5，额外效果回理智 +12。
+	FDialogueChoice C;
+	C.Text = FText::FromString(TEXT("被理解"));
+	C.Effect.Type = EDialogueEffectType::AddAffinity;
+	C.Effect.Target = TEXT("UncleLim");
+	C.Effect.Value = 5;
+	FDialogueEffect San;
+	San.Type = EDialogueEffectType::AddSanity;
+	San.Value = 12;
+	C.ExtraEffects.Add(San);
+
+	// CollectEffects 直接验证：两个生效效果，顺序为主 → 额外。
+	const TArray<FDialogueEffect> Collected = C.CollectEffects();
+	TestEqual(TEXT("collects two effects"), Collected.Num(), 2);
+	TestEqual(TEXT("first is affinity"), Collected[0].Type, EDialogueEffectType::AddAffinity);
+	TestEqual(TEXT("second is sanity"), Collected[1].Type, EDialogueEffectType::AddSanity);
+
+	FDialogueNode Root;
+	Root.NodeId = TEXT("root");
+	Root.Choices = { C };
+	FDialogueTree Tree;
+	Tree.TreeId = TEXT("multi");
+	Tree.RootNodeId = TEXT("root");
+	Tree.Nodes = { Root };
+
+	auto AlwaysTrue = [](const FDialogueCondition&) { return true; };
+
+	// 新重载：产出两个效果。
+	FDialogueSystem Sys;
+	Sys.Start(Tree);
+	TArray<FDialogueEffect> Effects;
+	TestTrue(TEXT("multi TryChoose ok"), Sys.TryChoose(0, AlwaysTrue, Effects));
+	TestEqual(TEXT("two effects emitted"), Effects.Num(), 2);
+
+	// 旧单效果重载：只拿主效果（向后兼容）。
+	FDialogueSystem Sys2;
+	Sys2.Start(Tree);
+	FDialogueEffect Single;
+	TestTrue(TEXT("single TryChoose ok"), Sys2.TryChoose(0, AlwaysTrue, Single));
+	TestEqual(TEXT("single overload returns primary effect"), Single.Type, EDialogueEffectType::AddAffinity);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

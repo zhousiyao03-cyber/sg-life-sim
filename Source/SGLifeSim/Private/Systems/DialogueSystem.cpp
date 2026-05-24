@@ -93,6 +93,18 @@ bool FDialogueSystem::ValidateTree(const FDialogueTree& InTree, FString& OutErro
 
 bool FDialogueSystem::TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator, FDialogueEffect& OutEffect)
 {
+	// 单效果便利重载：复用多效果版本，取主效果（首个）；无效果则回 None。
+	TArray<FDialogueEffect> Effects;
+	if (!TryChoose(ChoiceIndex, Evaluator, Effects))
+	{
+		return false;
+	}
+	OutEffect = Effects.Num() > 0 ? Effects[0] : FDialogueEffect{};
+	return true;
+}
+
+bool FDialogueSystem::TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator, TArray<FDialogueEffect>& OutEffects)
+{
 	const FDialogueNode* Node = GetCurrentNode();
 	if (!Node || !Node->Choices.IsValidIndex(ChoiceIndex))
 	{
@@ -105,9 +117,10 @@ bool FDialogueSystem::TryChoose(int32 ChoiceIndex, FConditionEvaluator Evaluator
 		return false;  // 条件不满足，拒绝
 	}
 
-	OutEffect = Choice.Effect;
+	OutEffects = Choice.CollectEffects();
 
 	// 跳转：EndDialogue / 无下一节点 / 目标节点缺失 → 结束。
+	// 注意按主 Effect 的 EndDialogue 判，与旧行为一致。
 	if (Choice.Effect.Type == EDialogueEffectType::EndDialogue
 		|| Choice.NextNodeId.IsNone()
 		|| FindNode(Choice.NextNodeId) == nullptr)
