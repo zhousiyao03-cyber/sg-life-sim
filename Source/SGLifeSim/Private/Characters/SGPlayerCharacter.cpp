@@ -41,6 +41,7 @@
 #include "Systems/WeatherTypes.h"
 #include "World/LocationManagerSubsystem.h"
 #include "World/SGStreetNPC.h"
+#include "World/SGDrivableCar.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -895,6 +896,14 @@ void ASGPlayerCharacter::Fire()
 		if (ASGStreetNPC* Npc = Cast<ASGStreetNPC>(Hit.GetActor()))
 		{
 			Npc->TakeMeleeHit(Damage); // 复用通用受击入口（掉血 + 内部涨通缉）
+			if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
+			{
+				Audio->PlayCueAtLocation(ESGSound::NpcHit, Hit.ImpactPoint);
+			}
+		}
+		else if (ASGDrivableCar* Car = Cast<ASGDrivableCar>(Hit.GetActor()))
+		{
+			Car->TakeVehicleHit(Damage); // 枪打车也掉载具 HP
 			if (USGAudioSubsystem* Audio = GI->GetSubsystem<USGAudioSubsystem>())
 			{
 				Audio->PlayCueAtLocation(ESGSound::NpcHit, Hit.ImpactPoint);

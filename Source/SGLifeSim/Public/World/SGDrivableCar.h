@@ -35,6 +35,12 @@ public:
 	virtual void OnInteract_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
+	/** 受击（被枪打/撞）：扣载具 HP，归零则损毁（变暗、失去动力、不能开）。 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Car")
+	void TakeVehicleHit(int32 Damage);
+
+	bool IsWrecked() const { return bWrecked; }
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SGLifeSim|Car")
 	TObjectPtr<UStaticMeshComponent> Body;
@@ -60,4 +66,8 @@ private:
 	float CurrentSpeed = 0.f;
 	float Accel = 800.f;       // cm/s^2
 	float TurnRate = 90.f;     // deg/s（满速时）
+
+	/** 载具血量；归零损毁。 */
+	int32 VehicleHealth = 100;
+	bool bWrecked = false;
 };
