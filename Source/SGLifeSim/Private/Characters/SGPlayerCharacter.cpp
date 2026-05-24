@@ -20,6 +20,9 @@
 #include "Systems/ProgressSubsystem.h"
 #include "Systems/RelationshipSubsystem.h"
 #include "Systems/RelationshipTypes.h"
+#include "Systems/ResidencySubsystem.h"
+#include "Systems/AssetsSubsystem.h"
+#include "Systems/EndingSubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
@@ -327,6 +330,22 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 			PS->GetAttribute(EPlayerAttribute::Energy),
 			PS->GetAttribute(EPlayerAttribute::Mood),
 			PS->GetAttribute(EPlayerAttribute::Health))));
+	}
+
+	// 进阶行（身份 · 房产 · 终局倾向）
+	{
+		UResidencySubsystem* Res = GI ? GI->GetSubsystem<UResidencySubsystem>() : nullptr;
+		UAssetsSubsystem* Assets = GI ? GI->GetSubsystem<UAssetsSubsystem>() : nullptr;
+		UEndingSubsystem* End = GI ? GI->GetSubsystem<UEndingSubsystem>() : nullptr;
+		if (Res && Assets && End)
+		{
+			const FText StatusText = UEnum::GetDisplayValueAsText(Res->GetStatus());
+			const FText HousingText = UEnum::GetDisplayValueAsText(Assets->GetHousingTier());
+			const FText LeaningText = UEnum::GetDisplayValueAsText(End->GetCurrentLeaning());
+			HudWidget->SetProgressionText(FText::FromString(FString::Printf(
+				TEXT("身份 %s · 住房 %s · 走向 %s"),
+				*StatusText.ToString(), *HousingText.ToString(), *LeaningText.ToString())));
+		}
 	}
 
 	// 靠近可交互对象时显示其提示（如「[E] 对话」），否则隐藏

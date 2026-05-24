@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
 #include "Systems/EconomyTypes.h"
+#include "Systems/ResidencyTypes.h"
+#include "Systems/AssetsTypes.h"
+#include "Systems/EndingTypes.h"
 #include "SGSaveGame.generated.h"
 
 /**
@@ -48,4 +51,25 @@ public:
 	// --- PlayerState ---
 	UPROPERTY()
 	TArray<int32> PlayerAttributes;
+
+	// --- Residency ---
+	UPROPERTY()
+	EResidencyStatus ResidencyStatus = EResidencyStatus::WorkPermit_EP;
+
+	UPROPERTY()
+	int32 PRRejectionCount = 0;
+
+	// --- Assets ---
+	UPROPERTY()
+	EHousingTier HousingTier = EHousingTier::None;
+
+	UPROPERTY()
+	EVehicleTier VehicleTier = EVehicleTier::None;
+
+	UPROPERTY()
+	int64 InvestmentCents = 0;
+
+	// --- Ending ---
+	UPROPERTY()
+	EEnding ChosenEnding = EEnding::None;
 };

@@ -73,6 +73,17 @@ TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 		}
 		StyleText(StatsText, 18, FLinearColor(0.85f, 0.9f, 1.f));
 
+		// 进阶行（左列，属性行下方）
+		ProgressionText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ProgressionText"));
+		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(ProgressionText))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(32.f, 116.f));
+			CanvasSlot->SetAutoSize(true);
+		}
+		StyleText(ProgressionText, 18, FLinearColor(1.f, 0.92f, 0.78f));
+
 		// 成就 toast（顶部居中）
 		ToastText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ToastText"));
 		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(ToastText))
@@ -149,6 +160,11 @@ void USGHudWidget::SetWalletText(const FText& InText)
 void USGHudWidget::SetStatsText(const FText& InText)
 {
 	ApplyOptionalText(StatsText, InText);
+}
+
+void USGHudWidget::SetProgressionText(const FText& InText)
+{
+	ApplyOptionalText(ProgressionText, InText);
 }
 
 void USGHudWidget::ShowAchievementToast(const FText& InText, float HoldSeconds)

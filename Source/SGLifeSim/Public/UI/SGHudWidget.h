@@ -29,6 +29,9 @@ public:
 	/** 属性行（左下：能量/心情/健康）；传空则隐藏。 */
 	void SetStatsText(const FText& InText);
 
+	/** 进阶行（身份 · 房产 · 终局倾向）；传空则隐藏。 */
+	void SetProgressionText(const FText& InText);
+
 	/** 靠近可交互对象时的提示（如「[E] 对话」）；传空则隐藏。 */
 	void SetPromptText(const FText& InText);
 
@@ -50,6 +53,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> StatsText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> ProgressionText;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> PromptText;

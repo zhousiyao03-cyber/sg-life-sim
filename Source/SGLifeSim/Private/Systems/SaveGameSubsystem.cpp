@@ -5,6 +5,9 @@
 #include "Systems/ProgressSubsystem.h"
 #include "Systems/RelationshipSubsystem.h"
 #include "Systems/PlayerStateSubsystem.h"
+#include "Systems/ResidencySubsystem.h"
+#include "Systems/AssetsSubsystem.h"
+#include "Systems/EndingSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString USaveGameSubsystem::DefaultSlot = TEXT("SGLifeSim_Slot0");
@@ -38,6 +41,21 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 	{
 		Save.PlayerAttributes = PS->GetStats().GetSnapshot();
 	}
+	if (const UResidencySubsystem* Res = GI->GetSubsystem<UResidencySubsystem>())
+	{
+		Save.ResidencyStatus = Res->GetStatus();
+		Save.PRRejectionCount = Res->GetPRRejectionCount();
+	}
+	if (const UAssetsSubsystem* Assets = GI->GetSubsystem<UAssetsSubsystem>())
+	{
+		Save.HousingTier = Assets->GetHousingTier();
+		Save.VehicleTier = Assets->GetVehicleTier();
+		Save.InvestmentCents = Assets->GetInvestmentValue();
+	}
+	if (const UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
+	{
+		Save.ChosenEnding = End->GetChosenEnding();
+	}
 }
 
 void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
@@ -68,6 +86,18 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	if (UPlayerStateSubsystem* PS = GI->GetSubsystem<UPlayerStateSubsystem>())
 	{
 		PS->GetStats().RestoreSnapshot(Save.PlayerAttributes);
+	}
+	if (UResidencySubsystem* Res = GI->GetSubsystem<UResidencySubsystem>())
+	{
+		Res->GetResidency().RestoreState(Save.ResidencyStatus, Save.PRRejectionCount);
+	}
+	if (UAssetsSubsystem* Assets = GI->GetSubsystem<UAssetsSubsystem>())
+	{
+		Assets->GetAssets().RestoreState(Save.HousingTier, Save.VehicleTier, Save.InvestmentCents);
+	}
+	if (UEndingSubsystem* End = GI->GetSubsystem<UEndingSubsystem>())
+	{
+		End->RestoreChosenEnding(Save.ChosenEnding);
 	}
 }
 
