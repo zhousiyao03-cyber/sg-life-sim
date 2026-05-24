@@ -97,4 +97,8 @@ public:
 	// --- Sanity（Plan 16，恐怖） ---
 	UPROPERTY()
 	int32 Sanity = 100;
+
+	// --- Horror Codex（Plan 21，恐怖图鉴 bitmask） ---
+	UPROPERTY()
+	int64 DiscoveredHorrors = 0;
 };

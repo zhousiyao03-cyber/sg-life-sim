@@ -10,6 +10,7 @@
 #include "Systems/CareerSubsystem.h"
 #include "Systems/EndingSubsystem.h"
 #include "Systems/SanitySubsystem.h"
+#include "Systems/HorrorCodexSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString USaveGameSubsystem::DefaultSlot = TEXT("SGLifeSim_Slot0");
@@ -72,6 +73,10 @@ void USaveGameSubsystem::GatherInto(USGSaveGame& Save) const
 	{
 		Save.Sanity = San->GetSanityForSave();
 	}
+	if (const UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
+	{
+		Save.DiscoveredHorrors = Codex->GetMaskForSave();
+	}
 }
 
 void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
@@ -124,6 +129,10 @@ void USaveGameSubsystem::ApplyFrom(const USGSaveGame& Save)
 	if (USanitySubsystem* San = GI->GetSubsystem<USanitySubsystem>())
 	{
 		San->RestoreFromSave(Save.Sanity);
+	}
+	if (UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
+	{
+		Codex->RestoreFromSave(Save.DiscoveredHorrors);
 	}
 }
 

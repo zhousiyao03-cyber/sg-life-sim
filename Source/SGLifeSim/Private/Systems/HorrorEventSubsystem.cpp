@@ -105,5 +105,6 @@ bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)
 	}
 
 	OnHorrorEvent.Broadcast(Def.Title);
+	OnHorrorEventTyped.Broadcast(Event);
 	return true;
 }

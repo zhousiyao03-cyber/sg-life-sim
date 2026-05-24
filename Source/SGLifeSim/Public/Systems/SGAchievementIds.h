@@ -26,6 +26,12 @@ namespace SGAchievementIds
 	/** 拿到同事 Wei 的内推机会。 */
 	inline FName KnowColleague() { return FName(TEXT("KnowColleague")); }
 
+	/** 第一次亲历都市传说（恐怖图鉴解锁第一条）。 */
+	inline FName FirstUrbanLegend() { return FName(TEXT("FirstUrbanLegend")); }
+
+	/** 集齐恐怖图鉴全部条目。 */
+	inline FName CompleteHorrorCodex() { return FName(TEXT("CompleteHorrorCodex")); }
+
 	/** 净资产达成阈值（分）：$10,000。 */
 	inline constexpr int64 NetWorth10kThresholdCents = 1000000;
 }

@@ -9,6 +9,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHorrorEvent, FText, Title);
 
+/** 带事件类型的版本（图鉴等需要知道「是哪一个」而非仅文案）。 */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHorrorEventTyped, EHorrorEvent, Event);
+
 /**
  * 恐怖事件子系统。FHorrorEventSystem 的 UE 薄壳。
  *
@@ -28,6 +31,10 @@ public:
 	/** 恐怖事件发生时广播阴森文案。 */
 	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Horror")
 	FOnHorrorEvent OnHorrorEvent;
+
+	/** 恐怖事件发生时广播事件类型（图鉴收集用）。 */
+	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Horror")
+	FOnHorrorEventTyped OnHorrorEventTyped;
 
 	/** 当前是否农历七月（鬼月）。 */
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Horror")

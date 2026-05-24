@@ -30,6 +30,7 @@
 #include "Systems/MilestoneSubsystem.h"
 #include "Systems/MilestoneSystem.h"
 #include "Systems/HorrorEventSubsystem.h"
+#include "Systems/HorrorCodexSubsystem.h"
 #include "Systems/SanitySubsystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
@@ -463,10 +464,18 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 		}
 	}
 
-	// 目标行（主线方向 + 进度）
+	// 目标行（主线方向 + 进度；亲历过都市传说后追加图鉴收集进度）
 	if (UMilestoneSubsystem* Milestones = GI ? GI->GetSubsystem<UMilestoneSubsystem>() : nullptr)
 	{
-		HudWidget->SetObjectiveText(Milestones->GetActiveObjectiveText());
+		FString Objective = Milestones->GetActiveObjectiveText().ToString();
+		if (UHorrorCodexSubsystem* Codex = GI->GetSubsystem<UHorrorCodexSubsystem>())
+		{
+			if (Codex->GetDiscoveredCount() > 0)
+			{
+				Objective += FString::Printf(TEXT("   ·   🕯 %s"), *Codex->GetProgressText().ToString());
+			}
+		}
+		HudWidget->SetObjectiveText(FText::FromString(Objective));
 	}
 
 	// 靠近可交互对象时显示其提示（如「[E] 对话」），否则隐藏
