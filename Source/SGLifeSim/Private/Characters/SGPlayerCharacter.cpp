@@ -27,6 +27,8 @@
 #include "Systems/CareerTypes.h"
 #include "Systems/EconomicEventSubsystem.h"
 #include "Systems/EndingSubsystem.h"
+#include "Systems/MilestoneSubsystem.h"
+#include "Systems/MilestoneSystem.h"
 #include "Systems/TimeBlock.h"
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
@@ -116,6 +118,10 @@ void ASGPlayerCharacter::BeginPlay()
 		if (UEconomicEventSubsystem* Events = GI->GetSubsystem<UEconomicEventSubsystem>())
 		{
 			Events->OnEconomicEvent.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleEconomicEvent);
+		}
+		if (UMilestoneSubsystem* Milestones = GI->GetSubsystem<UMilestoneSubsystem>())
+		{
+			Milestones->OnMilestoneCompleted.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleMilestoneCompleted);
 		}
 	}
 
@@ -281,6 +287,15 @@ void ASGPlayerCharacter::HandleEconomicEvent(FText Title)
 	}
 }
 
+void ASGPlayerCharacter::HandleMilestoneCompleted(EMilestone Milestone)
+{
+	if (HudWidget)
+	{
+		HudWidget->ShowAchievementToast(FText::FromString(FString::Printf(
+			TEXT("🎉 里程碑达成：%s"), *FMilestoneSystem::GetTitle(Milestone).ToString())), 6.f);
+	}
+}
+
 void ASGPlayerCharacter::AdvanceTime()
 {
 	if (UGameInstance* GI = GetGameInstance())
@@ -385,6 +400,12 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 				TEXT("身份 %s · 住房 %s · 走向 %s"),
 				*StatusText.ToString(), *HousingText.ToString(), *LeaningText.ToString())));
 		}
+	}
+
+	// 目标行（主线方向 + 进度）
+	if (UMilestoneSubsystem* Milestones = GI ? GI->GetSubsystem<UMilestoneSubsystem>() : nullptr)
+	{
+		HudWidget->SetObjectiveText(Milestones->GetActiveObjectiveText());
 	}
 
 	// 靠近可交互对象时显示其提示（如「[E] 对话」），否则隐藏

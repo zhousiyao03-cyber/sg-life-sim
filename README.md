@@ -46,7 +46,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 
 玩家操作已接入系统（Plan 3/4/6/7/8）：按 E 与 NPC 开对话面板（选项门控/施加好感等效果）+ 耗能量、推时间触发月度发薪/账单/投资回报/房贷月供、HUD 实时显示职位月薪/钱包/属性/身份/住房/房贷/终局倾向、菜单可存读档 + 按揭买房/还贷 + 升职/跳槽。
 
-跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **63 个全绿**。
+跑测试：`Automation RunTests SGLifeSim`（headless `UnrealEditor-Cmd ... -nullrhi`），当前 **64 个全绿**。
 
 ## 类型
 
@@ -59,7 +59,7 @@ spec §6 的五大系统都已落地为「纯 C++ 逻辑核心 + `UGameInstanceS
 ## 文档
 
 - 设计文档（spec）：[docs/specs/2026-05-23-sg-life-sim-design.md](docs/specs/2026-05-23-sg-life-sim-design.md)
-- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）· [Plan 12 代码驱动 NPC 入世](docs/plans/2026-05-24-world-population.md)（✅）
+- 实施计划：[Plan 1 引擎验证原型](docs/plans/2026-05-23-engine-validation-prototype.md)（✅）· [Plan 2 核心系统骨架](docs/plans/2026-05-24-core-systems-skeleton.md)（✅）· [Plan 3 系统接入可玩循环](docs/plans/2026-05-24-gameplay-integration.md)（✅）· [Plan 4 进阶与终局](docs/plans/2026-05-24-progression-and-endings.md)（✅）· [Plan 5 对话引擎](docs/plans/2026-05-24-dialogue-engine.md)（✅）· [Plan 6 对话 UI](docs/plans/2026-05-24-dialogue-ui.md)（✅）· [Plan 7 按揭购房融资](docs/plans/2026-05-24-housing-finance.md)（✅）· [Plan 8 职业与收入成长](docs/plans/2026-05-24-career-income.md)（✅）· [Plan 9 随机经济事件](docs/plans/2026-05-24-economic-events.md)（✅）· [Plan 10 时间块活动循环](docs/plans/2026-05-24-activities-loop.md)（✅）· [Plan 11 剧情内容扩充](docs/plans/2026-05-24-dialogue-content.md)（✅）· [Plan 12 代码驱动 NPC 入世](docs/plans/2026-05-24-world-population.md)（✅）· [Plan 13 人生目标主线](docs/plans/2026-05-24-life-milestones.md)（✅）
 - 决策记录：[docs/decisions/](docs/decisions/)
 
 ## 技术栈

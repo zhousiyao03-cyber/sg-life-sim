@@ -93,6 +93,10 @@ private:
 	UFUNCTION()
 	void HandleEconomicEvent(FText Title);
 
+	/** 绑定到 UMilestoneSubsystem::OnMilestoneCompleted，弹庆祝 toast。 */
+	UFUNCTION()
+	void HandleMilestoneCompleted(EMilestone Milestone);
+
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimSequence> CurrentAnim;

@@ -84,6 +84,17 @@ TSharedRef<SWidget> USGHudWidget::RebuildWidget()
 		}
 		StyleText(ProgressionText, 18, FLinearColor(1.f, 0.92f, 0.78f));
 
+		// 目标行（左列，进阶行下方）—— 主线方向，醒目一点
+		ObjectiveText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ObjectiveText"));
+		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(ObjectiveText))
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f));
+			CanvasSlot->SetAlignment(FVector2D(0.f, 0.f));
+			CanvasSlot->SetPosition(FVector2D(32.f, 146.f));
+			CanvasSlot->SetAutoSize(true);
+		}
+		StyleText(ObjectiveText, 19, FLinearColor(1.f, 0.82f, 0.3f));
+
 		// 成就 toast（顶部居中）
 		ToastText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ToastText"));
 		if (UCanvasPanelSlot* CanvasSlot = RootCanvas->AddChildToCanvas(ToastText))
@@ -165,6 +176,11 @@ void USGHudWidget::SetStatsText(const FText& InText)
 void USGHudWidget::SetProgressionText(const FText& InText)
 {
 	ApplyOptionalText(ProgressionText, InText);
+}
+
+void USGHudWidget::SetObjectiveText(const FText& InText)
+{
+	ApplyOptionalText(ObjectiveText, InText);
 }
 
 void USGHudWidget::ShowAchievementToast(const FText& InText, float HoldSeconds)
