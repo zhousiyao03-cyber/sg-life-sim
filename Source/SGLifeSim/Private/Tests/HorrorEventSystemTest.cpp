@@ -75,6 +75,19 @@ bool FHorrorEventSystemTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("same seed -> same sequence"), bSame);
 	}
 
+	// bGuaranteeEvent=true：「无事」不入池，抽很多次都不该抽到 None（每晚必出一条真事件）。
+	{
+		FRandomStream Stream(13579);
+		bool bSawNone = false;
+		for (int32 i = 0; i < 3000; ++i)
+		{
+			const EHorrorEvent E = FHorrorEventSystem::PickEvent(
+				Stream, /*ghost*/false, /*dread*/0, /*lowSanity*/false, /*guarantee*/true);
+			if (E == EHorrorEvent::None) { bSawNone = true; break; }
+		}
+		TestFalse(TEXT("guaranteed mode never yields None"), bSawNone);
+	}
+
 	// 每个非 None 事件都有文案。
 	for (int32 i = 1; i < (int32)EHorrorEvent::Count; ++i)
 	{

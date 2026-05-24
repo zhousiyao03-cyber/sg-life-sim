@@ -69,14 +69,17 @@ FHorrorEventDef FHorrorEventSystem::GetEventDef(EHorrorEvent Event)
 	return D;
 }
 
-EHorrorEvent FHorrorEventSystem::PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus, bool bLowSanity)
+EHorrorEvent FHorrorEventSystem::PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus, bool bLowSanity, bool bGuaranteeEvent)
 {
 	// 组装候选池（含权重）：None + 所有当前可入池的事件。
 	// 低理智的 DreadBonus 从「无事」权重里扣（保底 5），理智越低越容易出事。
+	// bGuaranteeEvent 时「无事」权重清零 → 必出一条真事件。
 	struct FCandidate { EHorrorEvent Event; int32 Weight; };
 	TArray<FCandidate> Pool;
 
-	const int32 NoneWeight = FMath::Max(5, GetNoneWeight(bGhostMonth) - FMath::Max(0, DreadBonus));
+	const int32 NoneWeight = bGuaranteeEvent
+		? 0
+		: FMath::Max(5, GetNoneWeight(bGhostMonth) - FMath::Max(0, DreadBonus));
 	Pool.Add({ EHorrorEvent::None, NoneWeight });
 
 	int32 Total = NoneWeight;

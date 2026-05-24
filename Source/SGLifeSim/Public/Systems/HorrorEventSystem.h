@@ -27,7 +27,8 @@ public:
 	 * - bGhostMonth=false 时鬼月限定事件不入池。
 	 * - bLowSanity=false 时低理智幻觉不入池（只有理智失常档才会「看见」）。
 	 * - DreadBonus（低理智来的额外恐惧）从「无事」权重里扣，越大越容易出事。
+	 * - bGuaranteeEvent=true 时「无事」不入池 → 必定抽中一条真事件（抽哪条仍按权重随机）。
 	 * 注入 FRandomStream → 可复现。
 	 */
-	static EHorrorEvent PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus = 0, bool bLowSanity = false);
+	static EHorrorEvent PickEvent(FRandomStream& Stream, bool bGhostMonth, int32 DreadBonus = 0, bool bLowSanity = false, bool bGuaranteeEvent = false);
 };

@@ -69,7 +69,8 @@ void UHorrorEventSubsystem::HandleTimeAdvanced(ETimeBlock NewBlock, int32 DayNum
 		// 理智「失常」档及以下才会「看见」幻觉。
 		bLowSanity = (uint8)Sanity->GetState() >= (uint8)ESanityState::Disturbed;
 	}
-	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity));
+	// 每天深夜必出一条恐怖事件（「无事」不入池）；抽哪条仍按权重随机，鬼月/幻觉门控照旧。
+	ApplyEvent(FHorrorEventSystem::PickEvent(Stream, bGhost, DreadBonus, bLowSanity, /*bGuaranteeEvent=*/true));
 }
 
 bool UHorrorEventSubsystem::ApplyEvent(EHorrorEvent Event)
