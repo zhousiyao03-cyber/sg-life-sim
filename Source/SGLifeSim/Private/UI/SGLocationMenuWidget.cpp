@@ -10,6 +10,8 @@
 #include "Components/VerticalBoxSlot.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/GameInstance.h"
+#include "Systems/SaveGameSubsystem.h"
 
 namespace
 {
@@ -57,7 +59,7 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 		Backdrop->AddChild(VBox);
 
 		UTextBlock* Title = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title"));
-		Title->SetText(FText::FromString(TEXT("去哪里？")));
+		Title->SetText(FText::FromString(TEXT("菜单")));
 		Title->SetJustification(ETextJustify::Center);
 		{
 			FSlateFontInfo Font = Title->GetFont();
@@ -86,6 +88,22 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 		}
 		HawkerButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnGoHawker);
 
+		SaveButton = MakeButton(WidgetTree, TEXT("存档"), TEXT("SaveButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(SaveButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 14.f, 0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		SaveButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnSaveClicked);
+
+		LoadButton = MakeButton(WidgetTree, TEXT("读档"), TEXT("LoadButton"));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(LoadButton))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 4.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
+		}
+		LoadButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnLoadClicked);
+
 		CloseButton = MakeButton(WidgetTree, TEXT("取消  ·  M"), TEXT("CloseButton"));
 		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(CloseButton))
 		{
@@ -93,9 +111,28 @@ TSharedRef<SWidget> USGLocationMenuWidget::RebuildWidget()
 			BoxSlot->SetHorizontalAlignment(HAlign_Fill);
 		}
 		CloseButton->OnClicked.AddDynamic(this, &USGLocationMenuWidget::OnCloseClicked);
+
+		// 操作反馈行（存/读档结果），初始空。
+		StatusLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("StatusLabel"));
+		StatusLabel->SetText(FText::GetEmpty());
+		StatusLabel->SetJustification(ETextJustify::Center);
+		StatusLabel->SetColorAndOpacity(FSlateColor(FLinearColor(0.6f, 1.f, 0.7f)));
+		if (UVerticalBoxSlot* BoxSlot = VBox->AddChildToVerticalBox(StatusLabel))
+		{
+			BoxSlot->SetPadding(FMargin(0.f, 12.f, 0.f, 0.f));
+			BoxSlot->SetHorizontalAlignment(HAlign_Center);
+		}
 	}
 
 	return Super::RebuildWidget();
+}
+
+void USGLocationMenuWidget::SetStatus(const FString& Message)
+{
+	if (StatusLabel)
+	{
+		StatusLabel->SetText(FText::FromString(Message));
+	}
 }
 
 void USGLocationMenuWidget::OpenMenu()
@@ -142,6 +179,41 @@ void USGLocationMenuWidget::OnGoRental()
 void USGLocationMenuWidget::OnGoHawker()
 {
 	TravelTo(FName(TEXT("L_HawkerCenter")));
+}
+
+void USGLocationMenuWidget::OnSaveClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (USaveGameSubsystem* SaveSys = GI->GetSubsystem<USaveGameSubsystem>())
+			{
+				const bool bOk = SaveSys->SaveToSlot(USaveGameSubsystem::DefaultSlot);
+				SetStatus(bOk ? TEXT("已存档 ✓") : TEXT("存档失败"));
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("存档失败"));
+}
+
+void USGLocationMenuWidget::OnLoadClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (UGameInstance* GI = PC->GetGameInstance())
+		{
+			if (USaveGameSubsystem* SaveSys = GI->GetSubsystem<USaveGameSubsystem>())
+			{
+				const bool bOk = SaveSys->LoadFromSlot(USaveGameSubsystem::DefaultSlot);
+				// 读档后各 Subsystem 状态已回灌，关菜单回到游戏 → HUD 下一帧反映恢复值。
+				SetStatus(bOk ? TEXT("已读档 ✓") : TEXT("没有存档"));
+				return;
+			}
+		}
+	}
+	SetStatus(TEXT("读档失败"));
 }
 
 void USGLocationMenuWidget::OnCloseClicked()

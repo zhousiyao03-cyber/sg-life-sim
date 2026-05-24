@@ -10,6 +10,7 @@
 #include "Systems/PlayerStateSubsystem.h"
 #include "Systems/SaveGameSubsystem.h"
 #include "Systems/PlayerStatsTypes.h"
+#include "Systems/SGAchievementIds.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -61,9 +62,10 @@ bool FCoreSystemsIntegrationTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("CPF accrued after settlement"),
 		Eco->GetBalance(ECurrencyAccount::CPF_OA) > 0);
 
-	// 成就：发过薪 → 标记「第一次发薪」。
-	const bool bNewAch = Prog->MarkAchieved(TEXT("FirstSalary"));
-	TestTrue(TEXT("FirstSalary newly unlocked"), bNewAch);
+	// 成就：月度结算发薪后，AchievementDirector 已通过 OnBalanceChanged 自动解锁
+	// 「第一次发薪」（无需手动标记）—— 验证 Director 在完整循环里也生效。
+	TestTrue(TEXT("FirstSalary auto-unlocked by director after settlement"),
+		Prog->HasAchieved(SGAchievementIds::FirstSalary()));
 
 	// 每日能量恢复：耗一半，跨一天后回满。
 	PS->ModifyAttribute(EPlayerAttribute::Energy, -50);

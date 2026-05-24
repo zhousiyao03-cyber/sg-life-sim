@@ -5,11 +5,12 @@
 #include "SGLocationMenuWidget.generated.h"
 
 class UButton;
+class UTextBlock;
 
 /**
- * 地点切换菜单（纯 C++ UMG）。spec 原 plan 的 W_LocationMenu。
+ * 游戏菜单（纯 C++ UMG）。spec 原 plan 的 W_LocationMenu。
  *
- * M 键打开：居中面板列出可去的地点按钮，点一个就 OpenLevel 过去。
+ * M 键打开：居中面板列出可去的地点 + 存档 / 读档按钮。
  * 打开时切到 UI 输入模式 + 显示鼠标，关闭/前往后切回游戏输入。
  * 控件树全部在 RebuildWidget() 里构造，无需 BP widget 资产。
  */
@@ -35,11 +36,20 @@ protected:
 	void OnGoHawker();
 
 	UFUNCTION()
+	void OnSaveClicked();
+
+	UFUNCTION()
+	void OnLoadClicked();
+
+	UFUNCTION()
 	void OnCloseClicked();
 
 private:
 	/** 移除菜单、恢复游戏输入，然后跳转到目标关卡（Level 为空则只关闭）。 */
 	void TravelTo(FName LevelName);
+
+	/** 在菜单里显示一行操作反馈（如「已存档 ✓」）。 */
+	void SetStatus(const FString& Message);
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> RentalButton;
@@ -48,5 +58,14 @@ private:
 	TObjectPtr<UButton> HawkerButton;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UButton> SaveButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> LoadButton;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UButton> CloseButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> StatusLabel;
 };
