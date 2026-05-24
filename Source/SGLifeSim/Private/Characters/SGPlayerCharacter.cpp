@@ -139,9 +139,8 @@ void ASGPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	}
 }
 
-void ASGPlayerCharacter::TryInteract()
+AActor* ASGPlayerCharacter::FindNearbyInteractable() const
 {
-	// 找范围内最近的可交互 NPC（原型：遍历同类 actor + 距离判断）
 	TArray<AActor*> Npcs;
 	UGameplayStatics::GetAllActorsOfClass(this, ASGInteractableNPC::StaticClass(), Npcs);
 
@@ -157,7 +156,12 @@ void ASGPlayerCharacter::TryInteract()
 			Nearest = Npc;
 		}
 	}
+	return Nearest;
+}
 
+void ASGPlayerCharacter::TryInteract()
+{
+	AActor* Nearest = FindNearbyInteractable();
 	if (Nearest && Nearest->Implements<UInteractableInterface>())
 	{
 		IInteractableInterface::Execute_OnInteract(Nearest, this);
@@ -214,6 +218,14 @@ void ASGPlayerCharacter::DrawPrototypeHUD()
 
 	// 固定 Key=1 让这行原地刷新而不是堆叠
 	GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Hud);
+
+	// 靠近可交互对象时显示其提示（如「[E] 对话」），Key=3 原地刷新
+	AActor* Nearby = FindNearbyInteractable();
+	if (Nearby && Nearby->Implements<UInteractableInterface>())
+	{
+		const FText Prompt = IInteractableInterface::Execute_GetInteractionPrompt(Nearby);
+		GEngine->AddOnScreenDebugMessage(3, 0.f, FColor::Green, Prompt.ToString());
+	}
 }
 
 void ASGPlayerCharacter::Move(const FInputActionValue& Value)

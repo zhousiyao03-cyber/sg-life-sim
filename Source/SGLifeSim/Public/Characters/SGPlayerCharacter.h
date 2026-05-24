@@ -67,6 +67,9 @@ private:
 	/** 按当前水平速度在 Idle / Walk 间切换单节点播放，避免每帧重复 Play。 */
 	void UpdateLocomotionAnimation();
 
+	/** 返回交互范围内最近的可交互 Actor（无则 nullptr）。交互与 HUD 提示共用。 */
+	AActor* FindNearbyInteractable() const;
+
 	/** IA_Interact（E）：找范围内最近的可交互对象并触发 OnInteract。 */
 	void TryInteract();
 
