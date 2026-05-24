@@ -11,6 +11,8 @@ class UAnimSequence;
 class USGHudWidget;
 class USGLocationMenuWidget;
 class USGDialogueWidget;
+class USGEndingWidget;
+enum class EEnding : uint8;
 struct FInputActionValue;
 
 /**
@@ -100,6 +102,10 @@ private:
 	UFUNCTION()
 	void HandleHorrorEvent(FText Title);
 
+	/** 绑定到 UEndingSubsystem::OnEndingChosen，盖结局演出 overlay。 */
+	UFUNCTION()
+	void HandleEndingChosen(EEnding Ending);
+
 	/** 缓存当前正在播的序列，状态没变就不重新 Play。 */
 	UPROPERTY(Transient)
 	TObjectPtr<UAnimSequence> CurrentAnim;
@@ -115,6 +121,10 @@ private:
 	/** 对话界面（纯 C++ UMG），E 交互有对话树的 NPC 时弹出。懒创建。 */
 	UPROPERTY(Transient)
 	TObjectPtr<USGDialogueWidget> DialogueWidget;
+
+	/** 结局演出 overlay（纯 C++ UMG），选定结局时盖满屏。懒创建。 */
+	UPROPERTY(Transient)
+	TObjectPtr<USGEndingWidget> EndingWidget;
 
 	/** 对话气泡 N 秒后自动消失的计时器。 */
 	FTimerHandle DialogueClearTimer;

@@ -101,4 +101,25 @@ bool FEndingBreakdownTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FEndingFlavorTest,
+	"SGLifeSim.Ending.FlavorText",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEndingFlavorTest::RunTest(const FString& Parameters)
+{
+	// 每个真实结局都有标题 + 收尾文案；None 文案为空。
+	const EEnding Reals[] = { EEnding::Rooted, EEnding::CashOut, EEnding::Heartbreak,
+		EEnding::Adrift, EEnding::Breakdown };
+	for (EEnding E : Reals)
+	{
+		TestFalse(FString::Printf(TEXT("ending %d has title"), (int32)E),
+			FEndingEvaluator::GetEndingTitle(E).IsEmpty());
+		TestFalse(FString::Printf(TEXT("ending %d has flavor"), (int32)E),
+			FEndingEvaluator::GetEndingFlavor(E).IsEmpty());
+	}
+	TestTrue(TEXT("None has no flavor"), FEndingEvaluator::GetEndingFlavor(EEnding::None).IsEmpty());
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -26,6 +26,7 @@
 #include "Systems/CareerTypes.h"
 #include "Systems/EconomicEventSubsystem.h"
 #include "Systems/EndingSubsystem.h"
+#include "Systems/EndingTypes.h"
 #include "Systems/MilestoneSubsystem.h"
 #include "Systems/MilestoneSystem.h"
 #include "Systems/HorrorEventSubsystem.h"
@@ -34,6 +35,7 @@
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
 #include "UI/SGDialogueWidget.h"
+#include "UI/SGEndingWidget.h"
 #include "UI/SGHudWidget.h"
 #include "UI/SGLocationMenuWidget.h"
 
@@ -122,6 +124,10 @@ void ASGPlayerCharacter::BeginPlay()
 		if (UHorrorEventSubsystem* Horror = GI->GetSubsystem<UHorrorEventSubsystem>())
 		{
 			Horror->OnHorrorEvent.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleHorrorEvent);
+		}
+		if (UEndingSubsystem* Ending = GI->GetSubsystem<UEndingSubsystem>())
+		{
+			Ending->OnEndingChosen.AddUniqueDynamic(this, &ASGPlayerCharacter::HandleEndingChosen);
 		}
 	}
 
@@ -298,6 +304,27 @@ void ASGPlayerCharacter::HandleMilestoneCompleted(EMilestone Milestone)
 	{
 		HudWidget->ShowAchievementToast(FText::FromString(FString::Printf(
 			TEXT("🎉 里程碑达成：%s"), *FMilestoneSystem::GetTitle(Milestone).ToString())), 6.f);
+	}
+}
+
+void ASGPlayerCharacter::HandleEndingChosen(EEnding Ending)
+{
+	if (Ending == EEnding::None)
+	{
+		return;
+	}
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+	if (!EndingWidget)
+	{
+		EndingWidget = CreateWidget<USGEndingWidget>(PC, USGEndingWidget::StaticClass());
+	}
+	if (EndingWidget)
+	{
+		EndingWidget->ShowEnding(Ending);
 	}
 }
 

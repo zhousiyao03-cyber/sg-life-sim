@@ -38,4 +38,10 @@ public:
 		int64 NetWorthCents,
 		int32 PRRejections,
 		int32 Sanity = 100);
+
+	/** 结局标题（取枚举 DisplayName）。 */
+	static FText GetEndingTitle(EEnding Ending);
+
+	/** 结局收尾文案（演出 overlay 用）。None 返回空。 */
+	static FText GetEndingFlavor(EEnding Ending);
 };
