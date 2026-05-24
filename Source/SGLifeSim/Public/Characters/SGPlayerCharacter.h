@@ -10,6 +10,7 @@ class UInputMappingContext;
 class UInputAction;
 class UAnimSequence;
 class USGHudWidget;
+class USGLocationMenuWidget;
 struct FInputActionValue;
 
 /**
@@ -90,6 +91,10 @@ private:
 	/** 原型 HUD（纯 C++ UMG）。BeginPlay 里 CreateWidget + AddToViewport。 */
 	UPROPERTY(Transient)
 	TObjectPtr<USGHudWidget> HudWidget;
+
+	/** 地点切换菜单（纯 C++ UMG），M 键开/关。懒创建。 */
+	UPROPERTY(Transient)
+	TObjectPtr<USGLocationMenuWidget> LocationMenu;
 
 	/** 对话气泡 N 秒后自动消失的计时器。 */
 	FTimerHandle DialogueClearTimer;

@@ -17,6 +17,7 @@
 #include "Systems/TimeSubsystem.h"
 #include "TimerManager.h"
 #include "UI/SGHudWidget.h"
+#include "UI/SGLocationMenuWidget.h"
 
 ASGPlayerCharacter::ASGPlayerCharacter()
 {
@@ -207,17 +208,28 @@ void ASGPlayerCharacter::AdvanceTime()
 
 void ASGPlayerCharacter::SwitchLocation()
 {
-	// 原型：M 在出租屋 / 食阁两个关卡间直接切换（替代 UMG 跳转菜单）。
+	// M 键开/关地点菜单（USGLocationMenuWidget）。点菜单里的按钮才真正 OpenLevel。
 	// TimeSubsystem 在 GameInstance 上，跨关卡保留 —— 验证 ADR 0005。
-	const FString Current = GetWorld() ? GetWorld()->GetMapName() : FString();
-	const bool bAtHawker = Current.Contains(TEXT("HawkerCenter"));
-	const FName Target = bAtHawker ? FName(TEXT("L_Rental")) : FName(TEXT("L_HawkerCenter"));
-	if (GEngine)
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan,
-			FString::Printf(TEXT("前往：%s"), *Target.ToString()));
+		return;
 	}
-	UGameplayStatics::OpenLevel(this, Target);
+
+	if (LocationMenu && LocationMenu->IsInViewport())
+	{
+		LocationMenu->CloseMenu();
+		return;
+	}
+
+	if (!LocationMenu)
+	{
+		LocationMenu = CreateWidget<USGLocationMenuWidget>(PC, USGLocationMenuWidget::StaticClass());
+	}
+	if (LocationMenu)
+	{
+		LocationMenu->OpenMenu();
+	}
 }
 
 void ASGPlayerCharacter::DrawPrototypeHUD()
