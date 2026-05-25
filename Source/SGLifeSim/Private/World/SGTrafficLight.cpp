@@ -16,15 +16,18 @@ ASGTrafficLight::ASGTrafficLight()
 	Head->SetupAttachment(Pole);
 	Head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	// 灯柱仍用引擎细圆柱（赛道素材无独立路灯杆，圆柱够用）。
 	if (UStaticMesh* Cyl = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")))
 	{
 		Pole->SetStaticMesh(Cyl);
 		Pole->SetWorldScale3D(FVector(0.12f, 0.12f, 3.0f)); // 细高灯柱（约 3m）
 	}
-	if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+	// 换皮：灯头用赛道素材的信号灯 mesh。颜色相位仍靠 ApplyHeadColor 染红黄绿（功能性，不动）。
+	// ★比例待 PIE 校准——RaceLights 自带尺寸，scale 设近 1。
+	if (UStaticMesh* LightMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/RacingTrack/Mesh/SM_RaceLights_A.SM_RaceLights_A")))
 	{
-		Head->SetStaticMesh(Cube);
-		Head->SetRelativeScale3D(FVector(0.4f, 0.4f, 1.0f));
+		Head->SetStaticMesh(LightMesh);
+		Head->SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
 		Head->SetRelativeLocation(FVector(0.f, 0.f, 160.f)); // 顶部灯头
 	}
 }

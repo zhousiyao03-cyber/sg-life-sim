@@ -82,10 +82,10 @@ void USGCityPopulatorSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 		}
 	}
 
-	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	// 装饰楼已改用赛道素材 mesh（见下文 DecorMeshes 轮换），不再需要 Cube。
 	UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
 
-	// 地面。
+	// 地面。换皮：铺赛道素材的混凝土路面材质，比默认棋盘格像城市地面。
 	if (Plane)
 	{
 		AActor* Ground = InWorld.SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
@@ -96,6 +96,10 @@ void USGCityPopulatorSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 			Ground->SetRootComponent(GC);
 			GC->SetStaticMesh(Plane);
 			GC->SetWorldScale3D(FVector(120.f, 120.f, 1.f)); // 大片地面
+			if (UMaterialInterface* RoadMat = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/RacingTrack/Materials/MI_Concrete.MI_Concrete")))
+			{
+				GC->SetMaterial(0, RoadMat);
+			}
 		}
 	}
 
@@ -122,20 +126,35 @@ void USGCityPopulatorSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 		}
 	}
 
-	// 装饰楼（不可进，填充城市感）。
-	if (Cube)
+	// 装饰楼（不可进，填充城市感）。换皮：用赛道素材的建筑 mesh 轮换，比单一 Cube 有层次。
+	// ★这些 mesh 自带真实尺寸，BuildDecorLayout 里给的 Spec.Scale 是按 Cube 算的，
+	// 换 mesh 后比例必然不对——这里改用保守统一 scale，待 PIE 校准每栋高低错落。
 	{
+		const TCHAR* DecorMeshes[] = {
+			TEXT("/Game/RacingTrack/Mesh/SM_ControlHouse_A.SM_ControlHouse_A"),
+			TEXT("/Game/RacingTrack/Mesh/SM_ControlHouse_B.SM_ControlHouse_B"),
+			TEXT("/Game/RacingTrack/Mesh/SM_Build_GlassBlock.SM_Build_GlassBlock"),
+			TEXT("/Game/RacingTrack/Mesh/SM_Tower.SM_Tower"),
+		};
+		const int32 NumMeshes = UE_ARRAY_COUNT(DecorMeshes);
+
 		const TArray<FDecorBuildingSpec> Decor = BuildDecorLayout(
 			EntranceLocs, /*HalfExtent=*/6000.f, /*Spacing=*/900.f, /*ClearRadius=*/700.f);
+		int32 Idx = 0;
 		for (const FDecorBuildingSpec& Spec : Decor)
 		{
+			// 确定性轮换 mesh（按序号取模，不引入随机）。
+			UStaticMesh* DecorMesh = LoadObject<UStaticMesh>(nullptr, DecorMeshes[Idx % NumMeshes]);
+			++Idx;
+			if (!DecorMesh) { continue; }
+
 			AActor* Bldg = InWorld.SpawnActor<AActor>(AActor::StaticClass(), Spec.Location, FRotator::ZeroRotator);
 			if (!Bldg) { continue; }
 			UStaticMeshComponent* MC = NewObject<UStaticMeshComponent>(Bldg);
 			MC->RegisterComponent();
 			Bldg->SetRootComponent(MC);
-			MC->SetStaticMesh(Cube);
-			MC->SetWorldScale3D(Spec.Scale);
+			MC->SetStaticMesh(DecorMesh);
+			MC->SetWorldScale3D(FVector(2.5f, 2.5f, 2.5f)); // 保守统一放大，待校准
 		}
 	}
 
@@ -209,16 +228,17 @@ void USGCityPopulatorSubsystem::PopulateTraffic(UWorld& InWorld)
 		(void)Bike;
 	}
 
-	// 警察局 / 帮派地盘地标（H 块）：占位大楼 + 标记色，城市里两个特征地标。
-	UStaticMesh* LandmarkCube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	// 警察局 / 帮派地盘地标（H 块）：换皮用赛道素材的塔楼 + 标记色，城市里两个特征地标。
+	// ★SM_Tower 自带真实尺寸，scale 设近 1（不再 6 倍放大），比例待 PIE 校准。
+	UStaticMesh* LandmarkMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/RacingTrack/Mesh/SM_Tower.SM_Tower"));
 	auto SpawnLandmark = [&](const FVector& Loc, const FVector& Scale, const TCHAR* MatPath)
 	{
 		AActor* A = InWorld.SpawnActor<AActor>(AActor::StaticClass(), Loc, FRotator::ZeroRotator, P);
-		if (!A || !LandmarkCube) { return; }
+		if (!A || !LandmarkMesh) { return; }
 		UStaticMeshComponent* MC = NewObject<UStaticMeshComponent>(A);
 		MC->RegisterComponent();
 		A->SetRootComponent(MC);
-		MC->SetStaticMesh(LandmarkCube);
+		MC->SetStaticMesh(LandmarkMesh);
 		MC->SetWorldScale3D(Scale);
 		if (UMaterialInterface* M = LoadObject<UMaterialInterface>(nullptr, MatPath))
 		{
@@ -227,6 +247,34 @@ void USGCityPopulatorSubsystem::PopulateTraffic(UWorld& InWorld)
 	};
 	// 警察局：可交互蓝楼（走近 E 缴保释金销案 / 治疗）。
 	InWorld.SpawnActor<ASGPoliceStation>(ASGPoliceStation::StaticClass(), FVector(4000.f, -4000.f, 300.f), FRotator::ZeroRotator, P);
-	// 帮派地盘：红色大楼（MI_Car 是红）——这一片也是帮派 NPC 聚集处。
-	SpawnLandmark(FVector(-4000.f, -4000.f, 300.f), FVector(6.f, 6.f, 6.f), TEXT("/Game/Materials/MI_Car.MI_Car"));
+	// 帮派地盘：红色塔楼（MI_Car 是红）——这一片也是帮派 NPC 聚集处。
+	SpawnLandmark(FVector(-4000.f, -4000.f, 300.f), FVector(2.5f, 2.5f, 2.5f), TEXT("/Game/Materials/MI_Car.MI_Car"));
+
+	// 街景道具（换皮新增）：主干道路口摆锥桶/护栏，给灰盒城市加交通氛围。
+	// 自带真实尺寸，scale 近 1，待 PIE 校准。
+	{
+		UStaticMesh* Cone = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/RacingTrack/Mesh/SM_RoadCone.SM_RoadCone"));
+		UStaticMesh* Barrier = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/RacingTrack/Mesh/SM_TrackSideWallsBarrier_A_V1.SM_TrackSideWallsBarrier_A_V1"));
+		auto SpawnProp = [&](UStaticMesh* M, const FVector& Loc, const FRotator& Rot, const FVector& Scale)
+		{
+			if (!M) { return; }
+			AActor* A = InWorld.SpawnActor<AActor>(AActor::StaticClass(), Loc, Rot, P);
+			if (!A) { return; }
+			UStaticMeshComponent* MC = NewObject<UStaticMeshComponent>(A);
+			MC->RegisterComponent();
+			A->SetRootComponent(MC);
+			MC->SetStaticMesh(M);
+			MC->SetWorldScale3D(Scale);
+			MC->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 纯装饰，不挡路
+		};
+		// 四个主干道路口各摆几个锥桶 + 一段护栏（坐标同前面红绿灯路口）。
+		const TArray<FVector> PropJunctions = { FVector(2000, 0, 0), FVector(-2000, 0, 0), FVector(0, 2000, 0), FVector(0, -2000, 0) };
+		for (const FVector& J : PropJunctions)
+		{
+			SpawnProp(Cone, J + FVector(150, 150, 0), FRotator::ZeroRotator, FVector(1.5f, 1.5f, 1.5f));
+			SpawnProp(Cone, J + FVector(-150, 150, 0), FRotator::ZeroRotator, FVector(1.5f, 1.5f, 1.5f));
+			SpawnProp(Cone, J + FVector(150, -150, 0), FRotator::ZeroRotator, FVector(1.5f, 1.5f, 1.5f));
+			SpawnProp(Barrier, J + FVector(0, 400, 0), FRotator::ZeroRotator, FVector(2.f, 2.f, 2.f));
+		}
+	}
 }

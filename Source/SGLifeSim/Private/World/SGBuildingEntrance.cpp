@@ -45,13 +45,29 @@ void ASGBuildingEntrance::ConfigureEntrance(ELocation InLocation)
 {
 	Location = InLocation;
 
-	// 占位外观：引擎自带 Cube 拉成一栋楼。资产到位后换真建筑 mesh，逻辑不动。
-	if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
+	// 换皮：按地点类型选赛道素材里的建筑 mesh，让城市有辨识度（公司用玻璃写字楼等）。
+	// 这些 mesh 自带真实米级尺寸，scale 设近 1。★比例/朝向待 PIE 校准。
+	const TCHAR* MeshPath;
+	switch (Location)
+	{
+	case ELocation::Office:
+		MeshPath = TEXT("/Game/RacingTrack/Mesh/SM_Build_GlassBlock.SM_Build_GlassBlock"); // 玻璃幕墙写字楼
+		break;
+	case ELocation::Mall:
+	case ELocation::MRT:
+		MeshPath = TEXT("/Game/RacingTrack/Mesh/SM_ControlHouse_B.SM_ControlHouse_B"); // 大些的公共建筑
+		break;
+	default: // Rental / Hawker / Corridor
+		MeshPath = TEXT("/Game/RacingTrack/Mesh/SM_ControlHouse_A.SM_ControlHouse_A"); // 小楼
+		break;
+	}
+
+	if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, MeshPath))
 	{
 		if (BuildingMesh)
 		{
-			BuildingMesh->SetStaticMesh(Cube);
-			BuildingMesh->SetWorldScale3D(FVector(4.f, 4.f, 8.f)); // 一栋小楼
+			BuildingMesh->SetStaticMesh(Mesh);
+			BuildingMesh->SetWorldScale3D(FVector(2.f, 2.f, 2.f)); // 保守放大，待校准
 		}
 	}
 }
