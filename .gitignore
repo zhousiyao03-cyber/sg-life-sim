@@ -58,3 +58,9 @@ Thumbs.db
 # 个人开发笔记 / 草稿
 /scratch/
 /notes-private/
+
+# 购买的第三方素材包——体积大（写实4K贴图）、版权属外部，本地用即可不入库
+# 赛道素材包 rar 原件（3.8G）
+/Content/Materials/
+# 从赛道包精选导入的道具 mesh/材质/贴图（约400M，本地换皮用）
+/Content/RacingTrack/
