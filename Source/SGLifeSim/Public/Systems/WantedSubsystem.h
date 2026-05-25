@@ -23,6 +23,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Wanted")
 	void AddHeat(int32 Amount);
 
+	/**
+	 * 目击者举报：多个路人看到同一桩事只该报一次，不是每人各加一笔。
+	 * 全局限频——距上次举报不足 ReportCooldownSeconds 则忽略（吞掉重复目击）。
+	 * 返回是否真的记了一笔（供调用方决定要不要播报警音等）。
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Wanted")
+	bool ReportCrime(int32 Amount, float NowSeconds);
+
+	/**
+	 * 被捕：交一笔保释金（现金不够从银行扣，再不够能扣多少扣多少）后清通缉。
+	 * 区别于 ClearWanted（无代价清零，仅供读档/死亡医院流程用）——警察抓到你是要付代价的。
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SGLifeSim|Wanted")
+	void Arrest();
+
 	/** 当前通缉星级 0~5。 */
 	UFUNCTION(BlueprintPure, Category = "SGLifeSim|Wanted")
 	int32 GetStars() const;
@@ -46,8 +61,16 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "SGLifeSim|Wanted")
 	FOnWantedChanged OnWantedChanged;
 
+	/** 被捕扣的保释金（分）：和警察局自首同价，让"被抓"和"自首"代价一致。 */
+	static constexpr int64 ArrestBailCents = 20000; // S$200
+
 private:
 	void BroadcastIfChanged(int32 OldStars);
 
 	int32 Heat = 0; // 0..500，每 100 一星
+
+	/** 上次目击举报的时刻（秒，世界时间）。用于全局去重，避免一群路人各报一笔。 */
+	float LastReportSeconds = -1000.f;
+	/** 目击举报全局冷却（秒）：此窗口内的重复举报都吞掉。 */
+	static constexpr float ReportCooldownSeconds = 3.f;
 };

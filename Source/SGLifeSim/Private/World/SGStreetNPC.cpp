@@ -60,12 +60,13 @@ void ASGStreetNPC::TakeMeleeHit(int32 Damage)
 	if (bDead) { return; }
 	Health -= Damage;
 
-	// 被打到 → 涨通缉（袭击路人/警察都犯事）。
+	// 被打到 → 涨通缉（袭击警察是重罪，路人轻些）。注意：目击者举报另算（Panic 里限频一次），
+	// 这里只记"动手"本身这一笔，避免和举报叠加导致一拳就满星。
 	if (UGameInstance* GI = GetGameInstance())
 	{
 		if (UWantedSubsystem* W = GI->GetSubsystem<UWantedSubsystem>())
 		{
-			W->AddHeat(Kind == EStreetNpcKind::Police ? 60 : 25);
+			W->AddHeat(Kind == EStreetNpcKind::Police ? 40 : 8);
 		}
 	}
 
@@ -91,14 +92,16 @@ void ASGStreetNPC::Panic()
 	bAlarmed = true;
 	FleeTimer = 6.f; // 受惊后逃 6 秒
 
-	// 目击者举报：第一次受惊涨一笔通缉（路人看到有人动手/掏枪，报警）。
+	// 目击者举报：路人看到有人动手就报警。但一群路人同时看到同一桩事只该报一笔——
+	// 经 WantedSubsystem::ReportCrime 全局限频去重（之前每人各 +15 导致瞬间满星）。
 	if (bWasCalm)
 	{
 		if (UGameInstance* GI = GetGameInstance())
 		{
 			if (UWantedSubsystem* W = GI->GetSubsystem<UWantedSubsystem>())
 			{
-				W->AddHeat(15);
+				const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+				W->ReportCrime(15, Now);
 			}
 		}
 	}
@@ -180,7 +183,7 @@ void ASGStreetNPC::Tick(float DeltaSeconds)
 
 		if (Kind == EStreetNpcKind::Police && W)
 		{
-			W->ClearWanted();
+			W->Arrest(); // 被捕要交保释金，不再免费销案（架空警察局/保释金系统）。
 		}
 		else if (Kind == EStreetNpcKind::Gangster && AttackCooldown <= 0.f)
 		{

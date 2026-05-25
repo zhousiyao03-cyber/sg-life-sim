@@ -1,4 +1,8 @@
 #include "Systems/WantedSubsystem.h"
+#include "Systems/EconomySubsystem.h"
+#include "Systems/EconomyTypes.h"
+
+#include "Engine/GameInstance.h"
 
 namespace
 {
@@ -12,6 +16,37 @@ void UWantedSubsystem::AddHeat(int32 Amount)
 	const int32 Old = GetStars();
 	Heat = FMath::Clamp(Heat + Amount, 0, MaxHeat);
 	BroadcastIfChanged(Old);
+}
+
+bool UWantedSubsystem::ReportCrime(int32 Amount, float NowSeconds)
+{
+	if (Amount <= 0) { return false; }
+	// 全局去重：同一桩事多名目击者只记一笔。
+	if (NowSeconds - LastReportSeconds < ReportCooldownSeconds)
+	{
+		return false;
+	}
+	LastReportSeconds = NowSeconds;
+	AddHeat(Amount);
+	return true;
+}
+
+void UWantedSubsystem::Arrest()
+{
+	if (Heat <= 0) { return; }
+
+	// 交保释金（现金→银行兜底，能扣多少扣多少，不阻断被捕）。
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UEconomySubsystem* Econ = GI->GetSubsystem<UEconomySubsystem>())
+		{
+			if (!Econ->TryWithdraw(ECurrencyAccount::Cash, ArrestBailCents, TEXT("ArrestBail")))
+			{
+				Econ->TryWithdraw(ECurrencyAccount::Bank, ArrestBailCents, TEXT("ArrestBail"));
+			}
+		}
+	}
+	ClearWanted();
 }
 
 int32 UWantedSubsystem::GetStars() const
