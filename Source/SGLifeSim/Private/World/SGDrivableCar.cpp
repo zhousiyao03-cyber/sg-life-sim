@@ -148,9 +148,9 @@ void ASGDrivableCar::ExitCar()
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC || !DriverPawn) { return; }
 
-	// 把司机角色挪到车旁，possess 回去。
-	const FVector Side = GetActorLocation() + GetActorRightVector() * 250.f + FVector(0, 0, 50.f);
-	DriverPawn->SetActorLocation(Side);
+	// 把司机角色挪到车旁，possess 回去。带 sweep + 抬高，避免落点嵌进车身或地面。
+	const FVector Side = GetActorLocation() + GetActorRightVector() * 250.f + FVector(0, 0, 60.f);
+	DriverPawn->SetActorLocation(Side, /*bSweep=*/true);
 	PC->Possess(DriverPawn);
 	DriverPawn = nullptr;
 	CurrentSpeed = 0.f;

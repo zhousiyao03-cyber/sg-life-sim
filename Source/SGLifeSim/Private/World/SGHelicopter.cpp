@@ -126,9 +126,10 @@ void ASGHelicopter::ExitHeli()
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC || !DriverPawn) { return; }
 
-	// 把玩家挪到机身旁地面附近，possess 回去。
+	// 把玩家挪到机身旁，possess 回去。保持机身当前高度（别硬瞬到 Z=100，那会无视地形高度
+	// 把空中下机的玩家直接塞进地里）——出机后由 CharacterMovement 重力自然落地。带 sweep 防嵌机身。
 	const FVector Side = GetActorLocation() + GetActorRightVector() * 400.f;
-	DriverPawn->SetActorLocation(FVector(Side.X, Side.Y, 100.f));
+	DriverPawn->SetActorLocation(Side, /*bSweep=*/true);
 	PC->Possess(DriverPawn);
 	DriverPawn = nullptr;
 	CurrentSpeed = 0.f;

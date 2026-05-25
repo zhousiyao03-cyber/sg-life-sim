@@ -495,10 +495,29 @@ void ASGPlayerCharacter::HandlePlayerDied()
 	// GTA 式重生：传送回本关出生点（黑屏淡入等演出待美术）。
 	// 攀爬态先退出，免得带着 MOVE_Flying 重生。
 	if (bClimbing) { StopClimb(); }
-	SetActorLocation(SpawnLocation);
-	if (AController* Ctrl = GetController())
+
+	// 若死亡时正开着车/直升机（PC possess 的是载具，不是本角色），先 possess 回角色——
+	// 否则只把角色 pawn 挪走，玩家镜头还卡在载具里，"死了但还在车视角"。
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
 	{
-		Ctrl->SetControlRotation(SpawnRotation);
+		PC = UGameplayStatics::GetPlayerController(this, 0);
+		if (PC && PC->GetPawn() != this)
+		{
+			PC->Possess(this);
+		}
+	}
+
+	// 抬高一点再带碰撞落点：避免反复死时胶囊从半沉的旧落点起算越陷越深。
+	// 落速由 CharacterMovement 兜底，落地自动转 Walking。
+	SetActorLocation(SpawnLocation + FVector(0.f, 0.f, 50.f), /*bSweep=*/false);
+	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+	{
+		Move->StopMovementImmediately(); // 清掉死亡瞬间的残余速度
+	}
+	if (PC)
+	{
+		PC->SetControlRotation(SpawnRotation);
 	}
 }
 
